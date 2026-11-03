@@ -4,6 +4,15 @@
 
 빅데이터개론 Group 10 project.
 
+## Team
+
+| Student ID | Name |
+|---|---|
+| 2022270655 | 최영인 |
+| 2022271329 | 정고은 |
+| 2023270643 | 유찬 |
+| 2023271305 | 이현섭 |
+
 ## Problem
 
 An online retailer records hundreds of thousands of transactions. Finding which products customers buy together by hand is not feasible at that scale. Association-rule mining also has two problems of its own. It produces thousands of rules, which no one can read through. And when that many candidate rules are tested, many of them hold only by chance. This project finds product associations that hold over time and makes them easy to query in plain language.

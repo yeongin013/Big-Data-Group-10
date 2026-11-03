@@ -1,0 +1,15 @@
+# Local notes
+주제선정.md
+
+# Data (not redistributed)
+data/
+
+# Secrets
+.env
+
+# Python
+__pycache__/
+.venv/
+
+# macOS
+.DS_Store

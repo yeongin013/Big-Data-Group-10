@@ -6,12 +6,12 @@
 
 ## Team
 
-| Student ID | Name |
-|---|---|
-| 2022270655 | 최영인 |
-| 2022271329 | 정고은 |
-| 2023270643 | 유찬 |
-| 2023271305 | 이현섭 |
+| Student ID | Name | Role |
+|---|---|---|
+| 2022270655 | 최영인 | TBD |
+| 2022271329 | 정고은 | TBD |
+| 2023270643 | 유찬 | TBD |
+| 2023271305 | 이현섭 | TBD |
 
 ## Problem
 
@@ -21,7 +21,13 @@ An online retailer records hundreds of thousands of transactions. Finding which 
 
 We use the [UCI Online Retail II](https://archive.ics.uci.edu/dataset/502/online+retail+ii) dataset. It contains about 1 million transactions from a UK-based online retailer, recorded between December 2009 and December 2011, and is licensed under CC BY 4.0. We treat each invoice as one basket. We remove cancellations and non-product rows, and we hash the `Customer ID` field before any analysis.
 
-Raw data is not committed to this repository.
+Raw data is not committed to this repository. To download it, run:
+
+```bash
+python scripts/download_data.py
+```
+
+The script saves `data/raw/online_retail_II.xlsx` and checks its SHA-256 checksum. It needs only the Python standard library. If you get an SSL certificate error on macOS, run it as `SSL_CERT_FILE=/etc/ssl/cert.pem python scripts/download_data.py`.
 
 ## Method
 

@@ -19,13 +19,13 @@
 
 ### high
 
-1. `.gitignore`: `data/`, `.venv/`가 심볼릭 링크를 막지 못한다. worktree의 `data`, `.venv` 링크가 커밋될 수 있다. 슬래시 없는 `data`, `.venv`로 바꾼다.
+1. `.gitignore`: `data/`, `.venv/`가 심볼릭 링크를 막지 못한다. 원본 체크아웃에는 링크가 없고, worktree(`.claude/worktrees/draft-v1`)의 `data`, `.venv` 링크만 미추적으로 보인다. 거기서 `git add -A`를 하면 커밋될 수 있다. 슬래시 없는 `data`, `.venv`로 바꾼다.
 2. `src/agent.py` `season_filter`: 키워드를 부분 문자열로 맞춘다. "christmas 2011", "summer season" 같은 데이터에 없는 기간(함정)에도 315개를 반환한다. "november 2010"은 0개를 반환한다. 연도와 월을 파싱하거나 period를 enum으로 바꾼다.
-3. TLS: venv Python(python.org 3.14)에 CA 인증서가 없어 Solar 호출이 `CERTIFICATE_VERIFY_FAILED`로 실패한다. `Install Certificates.command`를 실행하거나 `SSL_CERT_FILE=/etc/ssl/cert.pem`을 쓴다. README에 적는다.
+3. TLS: venv Python(python.org 3.14)에 CA 인증서가 없어 Solar 호출이 `CERTIFICATE_VERIFY_FAILED`로 실패한다. `Install Certificates.command`를 실행하거나 `SSL_CERT_FILE=/etc/ssl/cert.pem`을 쓴다. README에 적는다. **해결 (11/5):** `agent.py`가 certifi CA 번들을 쓰고, README Solar 절에 적었다.
 
 ### medium
 
-4. `src/pcy.py` T2: `n_candidates` 열의 정의가 섞였다. A-Priori는 C(m,2), PCY는 실제 출현한 후보 수다. 열을 `n_candidates_occurring`, `n_candidates_all`로 나눈다.
+4. `src/pcy.py` T2: `n_candidates` 열의 정의가 섞였다. A-Priori 행은 C(m,2)(253,828), PCY 행은 실제 출현한 후보 수다. `n_candidates_all` 열은 이미 있다. A-Priori 행의 `n_candidates`를 `n_occurring`(252,748)으로 바꿔 PCY와 정의를 맞춘다.
 5. `src/apriori.py` 2차 패스: Python 리스트에 모은 뒤 bincount한다. PCY는 numpy로 벡터화되어 있다. 그래서 시간·메모리 비교는 구현 차이를 반영한다. 구현 방식을 맞추거나, 보고서에 "구현 차이"라고 적는다.
 6. `tests/test_textbook.py`: `rules()`의 conf/lift 필터를 지워도 테스트가 통과한다. 걸러지는 규칙이 생기는 예제를 추가한다. 교재 예제(MMDS Example 6.1)와 대조하는 테스트도 없다.
 7. `tests/test_evaluate.py`: `_split` off-by-one, `_ci`, `top5_filter`, `drop_top1pct`, `merge_same_day`, changed 플래그를 테스트하지 않는다.
@@ -43,7 +43,7 @@
 - T1 로그에 장바구니 수와 상품 수 줄이 없다. `cleaning_log.csv`는 캐시를 처음 만들 때만 써진다.
 - 캐시 이름이 `lines_…`이다. plan은 `baskets_…`이다.
 - `timings.csv`의 CPU가 "arm"으로만 기록된다.
-- `min_count` 테스트가 없다. pytest가 없어 `python -m tests.x`로만 돈다. README에 실행 명령을 적는다.
+- `min_count` 테스트가 없다. pytest가 없어 `python -m tests.x`로만 돈다. (README Reproduce 절에 실행 명령을 적었다.)
 - 셔플 겹침 처리가 plan과 다르다(무작위 자리를 더해 같이 섞는다). 남은 겹침은 0이다.
 - 라우터가 support 숫자를 confidence로 넣는다. 끝에 공백이 있는 상품명 22개를 매칭하지 못한다.
 - `rules_for("")`가 189개 전부를 반환한다. `top_rules(limit=-1)`도 결과를 낸다.
@@ -51,6 +51,12 @@
 - 붙여 넣기 프롬프트에는 규칙 약 504개(31k자)가 들어간다. plan은 약 200개로 가정했다.
 - F1의 2011-12는 9일뿐인 부분 월이다. 표시가 필요하다.
 - 가변 기본 인자 캐시와 `searchsorted` 역산은 학생이 설명하기 어렵다.
+
+## 리뷰 이후 추가로 찾은 것 (11/5, 레포·문서 대조 점검)
+
+- 3개 조합 개수(README Method 1, plan §1 "개수만 보조 보고")를 만드는 코드가 없다. support 1%의 빈발 3개 조합 수를 T2나 T3에 한 줄 추가한다.
+- `run_all.py` T6: `agent_runs.jsonl`과 `h3_grades.csv`가 둘 다 생기면 `NotImplementedError`로 전체 실행이 멈춘다. 12/1 전까지는 경고만 출력하게 한다.
+- F2: 사라진 상품 규칙 2개는 같은 쌍의 양방향이라 (0.766, 0) 한 점에 겹친다. 범례는 n=2인데 x는 하나만 보인다. 겹침을 표시하거나 주석을 단다. (범례가 점을 가리던 문제는 11/5에 범례를 왼쪽 위로 옮겨 고쳤다.)
 
 ## 초안 결과 (판정 전, 참고)
 

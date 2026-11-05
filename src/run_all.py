@@ -64,7 +64,7 @@ def f2(b):
     ax.axhline(0.5, color="grey", ls="--", lw=0.8)
     ax.set_xlabel("confidence, year 1")
     ax.set_ylabel("confidence, year 2")
-    ax.legend(loc="lower right")
+    ax.legend(loc="upper left")
     plt.tight_layout()
     plt.savefig(RESULTS / "f2_conf_y1_y2.png", dpi=150)
     plt.close()

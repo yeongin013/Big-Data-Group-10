@@ -1,0 +1,6 @@
+id,kind,tool,args
+SAMPLE1,answer,rules_for,"{""product"": ""hanging heart""}"
+SAMPLE2,answer,top_rules,"{""min_support"": 0.01, ""min_confidence"": 0.8}"
+SAMPLE3,trap,rules_for,"{""product"": ""99999X""}"
+SAMPLE4,answer,season_filter,"{""period"": ""christmas""}"
+SAMPLE5,trap,season_filter,"{""period"": ""2012-07""}"

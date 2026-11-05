@@ -1,0 +1,9 @@
+step,rows
+1 merge sheets,1067371
+2 drop exact duplicates,1033036
+3 drop cancel (C) and adjust (A) invoices,1013926
+4 drop quantity<=0 or price<=0,1007912
+5 drop non-product codes,1003213
+6 upper-case suffixes,1003213
+7 pseudonymise customers,1003213
+8 result,1003213

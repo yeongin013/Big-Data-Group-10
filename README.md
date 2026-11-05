@@ -36,6 +36,17 @@ The script saves `data/raw/online_retail_II.xlsx` and checks its SHA-256 checksu
 3. **Baseline:** Compare against a naive baseline that pairs the best-selling products.
 4. **LLM agent:** Build an agent on Upstage Solar with tool calls such as `rules_for(product)`, `top_rules(min_support, min_confidence)`, and `season_filter(period)`. The agent answers questions such as "What should we bundle for the Christmas season?" and cites the supporting support and confidence values.
 
+## Solar agent setup
+
+The agent needs your own Upstage API key. Copy `.env.example` to `.env` and put the key after `UPSTAGE_API_KEY=`. Never commit `.env`. Then run:
+
+```bash
+pip install -r requirements.txt
+python -m src.agent --ask "What goes with WHITE HANGING HEART T-LIGHT HOLDER?"
+```
+
+TLS uses the `certifi` CA bundle, so no certificate setup is needed.
+
 ## Plan
 
 The project plan is in [`plan/plan_v0.6.md`](plan/plan_v0.6.md) (Korean). The evaluation criteria were frozen at tag `plan-v0.6` (commit `685efa9`) and are not changed after that.

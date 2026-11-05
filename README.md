@@ -19,7 +19,7 @@ An online retailer records hundreds of thousands of transactions. Finding which 
 
 ## Data
 
-We use the [UCI Online Retail II](https://archive.ics.uci.edu/dataset/502/online+retail+ii) dataset. It contains about 1 million transactions from a UK-based online retailer, recorded between December 2009 and December 2011, and is licensed under CC BY 4.0. We treat each invoice as one basket. We remove cancellations and non-product rows, and we hash the `Customer ID` field before any analysis.
+We use the [UCI Online Retail II](https://archive.ics.uci.edu/dataset/502/online+retail+ii) dataset. It contains about 1 million order lines (about 40,000 baskets) from a UK-based online retailer, recorded between December 2009 and December 2011, and is licensed under CC BY 4.0. We treat each invoice as one basket. We remove cancellations and non-product rows, and we replace the `Customer ID` with a local number only in the local cache. Result files keep only aggregates.
 
 Raw data is not committed to this repository. To download it, run:
 
@@ -31,7 +31,7 @@ The script saves `data/raw/online_retail_II.xlsx` and checks its SHA-256 checksu
 
 ## Method
 
-1. **Frequent itemsets (MMDS Chapter 6):** Implement A-Priori and PCY to find frequent item pairs and triples. Derive association rules with support, confidence, and lift. Compare the two algorithms on memory use and run time.
+1. **Frequent itemsets (MMDS Chapter 6):** Implement A-Priori and PCY to find frequent item pairs (triples reported as counts). Derive association rules with support, confidence, and lift. Compare the two algorithms on memory use and run time.
 2. **Validation:** Mine rules on an earlier time window and check whether they still hold on a later window. This addresses the risk of false discoveries (MMDS §1.2, Bonferroni's principle).
 3. **Baseline:** Compare against a naive baseline that pairs the best-selling products.
 4. **LLM agent:** Build an agent on Upstage Solar with tool calls such as `rules_for(product)`, `top_rules(min_support, min_confidence)`, and `season_filter(period)`. The agent answers questions such as "What should we bundle for the Christmas season?" and cites the supporting support and confidence values.

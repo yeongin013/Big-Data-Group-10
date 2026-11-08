@@ -1,0 +1,31 @@
+id,kind,expected_tool,actual_tools,passed,answer_preview
+H3Q01,answer,rules_for,rules_for,True,"2 rules found. 22523 (CHILDS GARDEN FORK PINK) -> 22521 (CHILDS GARDEN TROWEL PINK): support 0.0102, confidence 0.9309; 22521 (CHILDS GARDEN TROWEL PINK) -> 225"
+H3Q02,answer,rules_for,rules_for,True,"4 rules found. 22746 (POPPY'S PLAYHOUSE LIVINGROOM ) -> 22748 (POPPY'S PLAYHOUSE KITCHEN): support 0.0107, confidence 0.8983; 22746 (POPPY'S PLAYHOUSE LIVINGROO"
+H3Q03,answer,rules_for,rules_for,True,"4 rules found. 22698 (PINK REGENCY TEACUP AND SAUCER) -> 22697 (GREEN REGENCY TEACUP AND SAUCER): support 0.0118, confidence 0.8657; 22698 (PINK REGENCY TEACUP "
+H3Q04,answer,top_rules,top_rules,True,"7 rules found. 22523 (CHILDS GARDEN FORK PINK) -> 22521 (CHILDS GARDEN TROWEL PINK): support 0.0102, confidence 0.9309; 22746 (POPPY'S PLAYHOUSE LIVINGROOM ) ->"
+H3Q05,answer,top_rules,top_rules,True,"10 rules found. 22523 (CHILDS GARDEN FORK PINK) -> 22521 (CHILDS GARDEN TROWEL PINK): support 0.0102, confidence 0.9309; 22746 (POPPY'S PLAYHOUSE LIVINGROOM ) -"
+H3Q06,answer,top_rules,top_rules,True,"10 rules found. 22523 (CHILDS GARDEN FORK PINK) -> 22521 (CHILDS GARDEN TROWEL PINK): support 0.0102, confidence 0.9309; 22746 (POPPY'S PLAYHOUSE LIVINGROOM ) -"
+H3Q07,answer,top_rules,top_rules,True,"1 rules found. 22523 (CHILDS GARDEN FORK PINK) -> 22521 (CHILDS GARDEN TROWEL PINK): support 0.0102, confidence 0.9309"
+H3Q08,answer,season_filter,season_filter,True,"315 rules found. 22747 (POPPY'S PLAYHOUSE BATHROOM) -> 22746 (POPPY'S PLAYHOUSE LIVINGROOM ): support 0.0169, confidence 0.9136; 22747 (POPPY'S PLAYHOUSE BATHRO"
+H3Q09,answer,season_filter,season_filter,True,"315 rules found. 22747 (POPPY'S PLAYHOUSE BATHROOM) -> 22746 (POPPY'S PLAYHOUSE LIVINGROOM ): support 0.0169, confidence 0.9136; 22747 (POPPY'S PLAYHOUSE BATHRO"
+H3Q10,answer,season_filter,season_filter,True,"315 rules found. 22747 (POPPY'S PLAYHOUSE BATHROOM) -> 22746 (POPPY'S PLAYHOUSE LIVINGROOM ): support 0.0169, confidence 0.9136; 22747 (POPPY'S PLAYHOUSE BATHRO"
+H3Q11,answer,season_filter,season_filter,True,"315 rules found. 22747 (POPPY'S PLAYHOUSE BATHROOM) -> 22746 (POPPY'S PLAYHOUSE LIVINGROOM ): support 0.0169, confidence 0.9136; 22747 (POPPY'S PLAYHOUSE BATHRO"
+H3Q12,answer,season_filter,season_filter,True,"315 rules found. 22747 (POPPY'S PLAYHOUSE BATHROOM) -> 22746 (POPPY'S PLAYHOUSE LIVINGROOM ): support 0.0169, confidence 0.9136; 22747 (POPPY'S PLAYHOUSE BATHRO"
+H3Q13,answer,rules_for,rules_for,True,"2 rules found. 22523 (CHILDS GARDEN FORK PINK) -> 22521 (CHILDS GARDEN TROWEL PINK): support 0.0102, confidence 0.9309; 22521 (CHILDS GARDEN TROWEL PINK) -> 225"
+H3Q14,answer,rules_for,rules_for,True,"4 rules found. 22746 (POPPY'S PLAYHOUSE LIVINGROOM ) -> 22748 (POPPY'S PLAYHOUSE KITCHEN): support 0.0107, confidence 0.8983; 22745 (POPPY'S PLAYHOUSE BEDROOM )"
+H3Q15,answer,top_rules,top_rules,True,"10 rules found. 22523 (CHILDS GARDEN FORK PINK) -> 22521 (CHILDS GARDEN TROWEL PINK): support 0.0102, confidence 0.9309; 22746 (POPPY'S PLAYHOUSE LIVINGROOM ) -"
+H3Q16,answer,top_rules,top_rules,True,"10 rules found. 22523 (CHILDS GARDEN FORK PINK) -> 22521 (CHILDS GARDEN TROWEL PINK): support 0.0102, confidence 0.9309; 22746 (POPPY'S PLAYHOUSE LIVINGROOM ) -"
+H3Q17,answer,rules_for,rules_for,True,"4 rules found. 22523 (CHILDS GARDEN FORK PINK) -> 22521 (CHILDS GARDEN TROWEL PINK): support 0.0102, confidence 0.9309; 22520 (CHILDS GARDEN TROWEL BLUE ) -> 22"
+H3Q18,answer,rules_for,rules_for,True,"5 rules found. 22698 (PINK REGENCY TEACUP AND SAUCER) -> 22697 (GREEN REGENCY TEACUP AND SAUCER): support 0.0118, confidence 0.8657; 22697 (GREEN REGENCY TEACUP"
+H3Q19,answer,top_rules,top_rules,True,"10 rules found. 22523 (CHILDS GARDEN FORK PINK) -> 22521 (CHILDS GARDEN TROWEL PINK): support 0.0102, confidence 0.9309; 22746 (POPPY'S PLAYHOUSE LIVINGROOM ) -"
+H3Q20,answer,top_rules,top_rules,True,"10 rules found. 22523 (CHILDS GARDEN FORK PINK) -> 22521 (CHILDS GARDEN TROWEL PINK): support 0.0102, confidence 0.9309; 22746 (POPPY'S PLAYHOUSE LIVINGROOM ) -"
+H3Q21,trap,season_filter,,True,I cannot answer this from the rule tables.
+H3Q22,trap,season_filter,,True,I cannot answer this from the rule tables.
+H3Q23,trap,rules_for,rules_for,True,I cannot answer this from the rule tables.
+H3Q24,trap,season_filter,,True,I cannot answer this from the rule tables.
+H3Q25,trap,rules_for,,True,I cannot answer this from the rule tables.
+H3Q26,trap,season_filter,,True,I cannot answer this from the rule tables.
+H3Q27,trap,season_filter,,True,I cannot answer this from the rule tables.
+H3Q28,trap,season_filter,,True,I cannot answer this from the rule tables.
+H3Q29,trap,rules_for,rules_for,True,I cannot answer this from the rule tables.
+H3Q30,trap,rules_for,,True,I cannot answer this from the rule tables.

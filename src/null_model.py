@@ -12,6 +12,8 @@ SPACES = ["main", "support_0.25", "b1", "peak"]
 
 def space_baskets(b, space):
     """Baskets of a search space: Y1 for all, peak = Y1 baskets in 2009-12 and 2010-11."""
+    if space not in SPACES:
+        raise ValueError(f"unknown null-model space: {space}")
     y1 = b[b.year == 1]
     if space == "peak":
         y1 = y1[y1.date.dt.month.isin([11, 12])]
@@ -21,6 +23,9 @@ def space_baskets(b, space):
 def count_space(baskets, space):
     """(number of 'rules', Bonferroni denominator, real rule/pair table with counts) for one space (§3.3 table)."""
     n = len(baskets)
+    if n == 0:
+        empty = pd.DataFrame(columns=["antecedent", "consequent", "count"])
+        return 0, 0, empty, {}
     if space == "b1":  # B1 has no confidence criterion: count pairs seen >= 5 times
         r = apriori.run(baskets, 5)
         t = pd.DataFrame([(a, c, k) for (a, c), k in r["pairs"].items()], columns=["antecedent", "consequent", "count"])
@@ -35,7 +40,13 @@ def shuffle(baskets, rng, retries=100):
     """Shuffle the item column over all (basket, item) slots; basket sizes and item counts stay fixed.
     Colliding slots (same item twice in a basket) are re-shuffled together with as many random slots, up to
     `retries` times. Leftover duplicates are dropped (baskets are sets). Returns (baskets, leftover)."""
+    if retries < 0:
+        raise ValueError("retries must be non-negative")
+    if not baskets:
+        return [], 0
     codes = np.array(sorted({i for t in baskets for i in t}))
+    if len(codes) == 0:
+        return [tuple() for _ in baskets], 0
     pos = {c: k for k, c in enumerate(codes)}
     bid = np.repeat(np.arange(len(baskets)), [len(t) for t in baskets])
     it = rng.permutation(np.array([pos[i] for t in baskets for i in t]))
@@ -58,6 +69,8 @@ def null_rule_ratio(baskets, space, seeds=range(100)):
     real = count_space(baskets, space)[0]
     counts, left, sec = [], [], None
     seeds = list(seeds)
+    if not seeds:
+        raise ValueError("at least one null-model seed is required")
     for k, s in enumerate(seeds):
         t = time.time()
         nb, lo = shuffle(baskets, np.random.default_rng(s))
@@ -83,6 +96,10 @@ def _lfact(n, _cache={}):
 
 def fisher_greater(a, K, m, N):
     """One-sided Fisher p = P(X >= a), X ~ Hypergeom(N baskets, K with x, m draws = baskets with y)."""
+    if N <= 0 or min(a, K, m) < 0 or K > N or m > N or a > min(K, m):
+        return 1.0
+    if N - K - m + a < 0:
+        return 1.0
     lf = _lfact(N)
     k = np.arange(a, min(K, m) + 1)
     lp = lf[K] - lf[k] - lf[K - k] + lf[N - K] - lf[m - k] - lf[N - K - m + k] - (lf[N] - lf[m] - lf[N - m])
@@ -92,10 +109,15 @@ def fisher_greater(a, K, m, N):
 
 def fisher_pass(baskets, space, alpha=0.05):
     """Share of the space's real rules (pairs for b1) with Fisher p <= alpha / Bonferroni denominator."""
+    if not 0 < alpha < 1:
+        raise ValueError("alpha must be between 0 and 1")
     n_rules, denom, t, cnt = count_space(baskets, space)
     N = len(baskets)
+    if denom == 0 or n_rules == 0:
+        return {"space": space, "denominator": denom, "fisher_alpha": np.nan, "fisher_pass_share": np.nan}
     p = np.array([fisher_greater(c, cnt[x], cnt[y], N) for x, y, c in zip(t.antecedent, t.consequent, t["count"])])
-    return {"space": space, "denominator": denom, "fisher_alpha": alpha / denom, "fisher_pass_share": (p <= alpha / denom).mean()}
+    threshold = alpha / denom
+    return {"space": space, "denominator": denom, "fisher_alpha": threshold, "fisher_pass_share": float((p <= threshold).mean())}
 
 
 if __name__ == "__main__":

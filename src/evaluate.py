@@ -20,6 +20,11 @@ def year_rules(baskets):
 
 def eval_stats(rules_df, eval_baskets):
     """Per rule: antecedent / consequent / both counts and conf, lift in the evaluation baskets (no support condition)."""
+    if len(rules_df) == 0:
+        return pd.DataFrame(
+            {"ante": [], "cons": [], "both": [], "conf": [], "lift": []},
+            index=rules_df.index,
+        )
     items = sorted(set(rules_df.antecedent) | set(rules_df.consequent))
     idx = {it: k for k, it in enumerate(items)}
     n = len(eval_baskets)
@@ -33,8 +38,8 @@ def eval_stats(rules_df, eval_baskets):
     ante, cons = M[:, xi].sum(0), M[:, yi].sum(0)
     both = (M[:, xi] & M[:, yi]).sum(0)
     with np.errstate(divide="ignore", invalid="ignore"):
-        conf = np.where(ante > 0, both / ante, 0.0)
-        lift = np.where(cons > 0, conf / (cons / n), 0.0)
+        conf = np.divide(both, ante, out=np.zeros_like(both, dtype=float), where=ante > 0)
+        lift = np.divide(conf, cons / n, out=np.zeros_like(conf), where=(cons > 0) & (n > 0))
     return pd.DataFrame({"ante": ante, "cons": cons, "both": both, "conf": conf, "lift": lift}, index=rules_df.index)
 
 
@@ -142,6 +147,8 @@ def recommend(visible, index, b0_order, k=5):
 
 def _ci(d, unit, n_boot, seed=0):
     """Percentile 95% CI of mean(d), resampling units with replacement (per-unit sums, then index resampling)."""
+    if len(d) == 0:
+        return np.array([np.nan, np.nan])
     codes, uniq = pd.factorize(unit)
     S, N = np.bincount(codes, weights=d), np.bincount(codes)
     rng = np.random.default_rng(seed)
@@ -176,19 +183,19 @@ def h2(b, mask_seeds=range(5), n_boot=1000, rule_filter=None, b1=True):
     rows, strata = [], []
     for s in mask_seeds:
         rng = np.random.default_rng(s)
-        m = [rng.integers(len(t)) for t in items]  # basket order = invoice order
+        m = np.array([rng.integers(len(t)) for t in items], dtype=int)  # basket order = invoice order
         masked = np.array([t[i] for t, i in zip(items, m)])
         hits = {}
         for name, idx in methods.items():
             hits[name] = np.array([t[i] in recommend(t[:i] + t[i + 1:], idx, b0_order)
                                    for t, i in zip(items, m)])
-        d = hits["rules"].astype(float) - hits["b0"]
+        d = hits["rules"].astype(float) - hits["b0"].astype(float)
         new = np.array([x not in cnt for x in masked])  # masked item never seen in Y1
         row = {"seed": s, "n": len(items)}
         row.update({f"hit_{k}": v.mean() for k, v in hits.items()})
         row["diff"] = d.mean()
-        row["ci_cust_lo"], row["ci_cust_hi"] = _ci(d, unit, n_boot)
-        row["ci_basket_lo"], row["ci_basket_hi"] = _ci(d, np.arange(len(d)), n_boot)
+        row["ci_cust_lo"], row["ci_cust_hi"] = _ci(d, unit, n_boot, seed=s)
+        row["ci_basket_lo"], row["ci_basket_hi"] = _ci(d, np.arange(len(d)), n_boot, seed=s + 10000)
         row["new_item_share"] = new.mean()
         row.update({f"hit_{k}_excl_new": v[~new].mean() for k, v in hits.items()})
         rows.append(row)

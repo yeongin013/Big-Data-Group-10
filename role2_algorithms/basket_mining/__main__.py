@@ -1,4 +1,4 @@
-"""CLI wiring only. Run from role2_algorithms: python -m basket_mining --help."""
+"""명령행 실행: python -m basket_mining --help"""
 import argparse
 from dataclasses import asdict
 import json

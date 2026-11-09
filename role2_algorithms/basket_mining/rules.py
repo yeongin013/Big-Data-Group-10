@@ -1,4 +1,4 @@
-"""Association rules. Counts come from mining; no LLM or file access is used."""
+"""빈발 항목집합에서 연관규칙을 계산한다."""
 from dataclasses import dataclass
 from itertools import combinations
 import math

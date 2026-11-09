@@ -1,8 +1,4 @@
-"""Team API adapter and T2 reporting for Hyeonseop's PCY implementation.
-
-Core: role2_algorithms/basket_mining/algorithms/pcy.py
-Measured memory and textbook storage MODELS are explicitly separate.
-"""
+"""기존 프로젝트의 PCY 함수와 T2 비교표. 구현은 role2_algorithms에 있다."""
 from itertools import combinations
 import math
 
@@ -32,7 +28,7 @@ def run(baskets, threshold, n_buckets, max_size=2):
     possible = sum(counts[bucket(ids[a], ids[b], n_buckets)] >= threshold
                    for a, b in combinations(frequent, 2))
     observed = result.stats.pair_candidates_observed
-    # Compatibility fields describe the textbook 4-byte counts / 12-byte triples model.
+    # 기존 보고서용 추정치: 버킷 4바이트, 후보 쌍 레코드 12바이트.
     mem1 = 4 * n_buckets
     mem2 = (n_buckets + 7) // 8 + 12 * observed
     return {"item_counts": result.item_counts, "frequent": frequent,
@@ -48,7 +44,7 @@ def run(baskets, threshold, n_buckets, max_size=2):
 
 def compare(baskets, levels=(0.02, 0.01, 0.005, 0.0025),
             buckets=(65_521, 1_048_573), repeats=5):
-    # Common normalization is excluded from both timings. Diagnostic snapshots are disabled.
+    # 정규화는 측정 전에 한 번 수행하고 진단용 버킷 복사는 끈다.
     dataset = BasketDataset.from_rows(baskets)
     rows = compare_core(dataset, levels, buckets, repeats)
     deterministic, timings = [], []
@@ -64,7 +60,7 @@ def compare(baskets, levels=(0.02, 0.01, 0.005, 0.0025),
             "level": row["min_support"], "threshold": row["min_count"],
             "algorithm": row["algorithm"], "n_buckets": B if is_pcy else math.nan,
             "n_frequent_items": m, "n_candidates": observed,
-            # Not computed inside timing: PCY's all-possible passing-pair enumeration is O(m^2).
+            # 모든 후보 열거 비용 O(m²)을 측정에 넣지 않는다.
             "n_candidates_all": math.nan if is_pcy else row["possible_frequent_item_pairs"],
             "possible_frequent_item_pairs": row["possible_frequent_item_pairs"],
             "frequent_bucket_ratio": row["frequent_bucket_ratio"],

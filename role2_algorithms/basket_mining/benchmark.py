@@ -1,4 +1,4 @@
-"""Benchmark orchestration. Timing and tracemalloc runs are deliberately separate."""
+"""시간 측정과 메모리 측정을 나눠 실행한다."""
 import csv
 import gc
 import json

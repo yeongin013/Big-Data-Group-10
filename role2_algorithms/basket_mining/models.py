@@ -1,4 +1,4 @@
-"""Data contracts only. Algorithms, file formats, and presentation stay elsewhere."""
+"""장바구니 입력과 마이닝 결과 자료형."""
 from dataclasses import dataclass, field
 from itertools import chain
 

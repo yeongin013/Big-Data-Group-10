@@ -82,7 +82,7 @@ python -m src.agent --ask "What goes with WHITE HANGING HEART T-LIGHT HOLDER?"
 
 TLS uses the `certifi` CA bundle, so no certificate setup is needed.
 
-Connection test (plan §3.4, due 11/17). It sends one plain message and one tool-call request, then appends the model ID, the date, and whether a tool call came back to `results/solar_ping.jsonl`:
+Connection test (plan §3.4, due 11/17). It sends one plain message and one tool-call request, then appends the model ID, the date, and whether a tool call came back to `results/agent_runs.jsonl`:
 
 ```bash
 python -m src.agent --ping

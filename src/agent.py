@@ -314,7 +314,7 @@ def main():
     a = p.parse_args()
     if a.ping:
         rec = ping()
-        with open(clean.RESULTS / "solar_ping.jsonl", "a", encoding="utf-8") as f:
+        with open(a.out, "a", encoding="utf-8") as f:
             f.write(json.dumps(rec, ensure_ascii=False) + "\n")
         print(json.dumps(rec, ensure_ascii=False, indent=2))
     elif a.ask:

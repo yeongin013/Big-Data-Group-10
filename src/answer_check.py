@@ -58,7 +58,7 @@ def allowed_values(outputs, question="", extra=()):
         if isinstance(v, (int, float)):
             vals.add(float(v))
         else:
-            
+
             for _, n, pct in numbers(str(v)):
                 vals.add(n / 100 if pct else n)
     return vals

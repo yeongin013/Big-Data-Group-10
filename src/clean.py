@@ -11,6 +11,7 @@ ROOT = Path(__file__).resolve().parent.parent
 RAW = ROOT / "data" / "raw" / "online_retail_II.xlsx"
 INTERIM = ROOT / "data" / "interim"
 RESULTS = ROOT / "results"
+LOG = RESULTS / "cleaning_log.csv"
 
 Y1 = ("2009-12-01", "2010-12-01")  # year 1: 2009-12 .. 2010-11
 Y2 = ("2010-12-01", "2011-12-01")  # year 2: 2010-12 .. 2011-11
@@ -52,19 +53,21 @@ def build():
     df = df.rename(columns={"Invoice": "invoice", "StockCode": "code", "Description": "description",
                             "Quantity": "quantity", "InvoiceDate": "date", "Price": "price", "Country": "country"})
     log.append(("8 result", len(df)))
+    log.append(("9 baskets (invoices)", df.invoice.nunique()))
+    log.append(("10 distinct product codes", df.code.nunique()))
     return df.reset_index(drop=True), log
 
 
 def load_lines():
     """Cleaned order lines (cached parquet). Columns: invoice, code, description, quantity, date, price, customer, country."""
     path = _cache_path()
-    if path.exists():
+    if path.exists() and LOG.exists():  # rebuild if the log is missing, so T1 always has it
         return pd.read_parquet(path)
     lines, log = build()
     INTERIM.mkdir(parents=True, exist_ok=True)
     lines.to_parquet(path)
     RESULTS.mkdir(exist_ok=True)
-    pd.DataFrame(log, columns=["step", "rows"]).to_csv(RESULTS / "cleaning_log.csv", index=False)
+    pd.DataFrame(log, columns=["step", "rows"]).to_csv(LOG, index=False)
     return lines
 
 
@@ -89,6 +92,6 @@ def descriptions(lines=None):
 
 if __name__ == "__main__":
     b = load_baskets()
-    print(pd.read_csv(RESULTS / "cleaning_log.csv").to_string(index=False))
+    print(pd.read_csv(LOG).to_string(index=False))
     print("baskets", len(b), "items", len({i for t in b["items"] for i in t}))
     print(b.year.value_counts().sort_index().to_dict())

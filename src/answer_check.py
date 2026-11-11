@@ -20,11 +20,11 @@ from collections import Counter
 RATIO_TOL = 0.005  # plan §3.4: ratios within ±0.005, counts exact
 
 # A number not glued to letters, so stock codes like 85123A and rule IDs like Y001 are skipped.
-NUMBER = re.compile(r"(?<![\w.])(\d{1,3}(?:,\d{3})+|\d+(?:\.\d+)?|\.\d+)(\s*%|\s*퍼센트)?(?![\w])")
+NUMBER = re.compile(r"(?<![A-Za-z0-9_.,])(\d{1,3}(?:,\d{3})+|\d+(?:\.\d+)?|\.\d+)(\s*%|\s*퍼센트)?(?![A-Za-z0-9_]|,\d)")
 LIST_MARKER = re.compile(r"^\s*(?:[-*]\s*)?\d+[.)]\s", re.M)  # "1. ", "2) " at line start
 REFUSAL = re.compile(
     r"cannot answer|can't answer|unable to answer|no (?:matching )?rules|not (?:in|available in) the data|"
-    r"does not (?:exist|appear)|no data|답(?:변)?할 수 없|알 수 없|찾을 수 없|규칙이 없|데이터에 없|존재하지 않", re.I)
+    r"does not (?:exist|appear)|no data|답(?:변)?할 수 없|답변드릴 수 없|알 수 없|찾을 수 없|규칙이 없|데이터에 없|존재하지 않", re.I)
 
 
 def numbers(text):

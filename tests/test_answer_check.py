@@ -13,6 +13,11 @@ def test_numbers():
     assert got == [(0.0102, False), (93.1, True), (1234.0, False)]  # list marker, code and rule ID skipped
 
 
+def test_korean_number_boundaries():
+    assert [(v, pct) for _, v, pct in ac.numbers("장바구니 19,743개, confidence 73.11%입니다")] == [(19743.0, False), (73.11, True)]
+    assert ac.check("답변드릴 수 없습니다.", [EMPTY])["verdict"] == "refusal"
+
+
 def test_supported_forms():
     allowed = {0.9309, 202.0}
     assert ac.supported(0.93, False, allowed)        # ratio within 0.005

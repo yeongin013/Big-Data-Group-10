@@ -1,0 +1,1 @@
+{"method": "ping", "date": "2026-11-11", "model_requested": "solar-pro4", "model_served": "solar-pro4-260806", "plain_reply": "\n\nok", "tool_call_ok": true, "tool_calls": [{"tool": "rules_for", "args": "{\"product\": \"85123A\"}"}], "seconds": 0.96}

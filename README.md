@@ -8,10 +8,10 @@
 
 | Student ID | Name | Role |
 |---|---|---|
-| 2022270655 | 최영인 | Data & reproducibility: `clean.py`, `run_all`, data section and discarded-information table, reproduction rehearsals, `test_slide_numbers`, H3 question set and grading |
-| 2022271329 | 정고은 | Algorithms: `apriori.py`, `pcy.py`, textbook and hash tests, T2 |
-| 2023270643 | 유찬 | Evaluation: `evaluate.py`, `null_model.py`, H1, H2, customer concentration, sensitivity analysis, H3 question set and grading |
-| 2023271305 | 이현섭 | Agent: `agent.py`, Solar tools, paste-in and router baselines, H3 runs |
+| 2022270655 | 최영인 | 거래 데이터 정제, 송장별 장바구니 생성, 분석 실행 환경 정리 |
+| 2022271329 | 정고은 | Solar 에이전트 연결, 규칙 조회 API와 시연 화면 구현, 답변 확인 |
+| 2023270643 | 유찬 | 이후 기간의 규칙 검증, 인기 상품 기준선 비교, 실행 시간과 메모리 측정 |
+| 2023271305 | 이현섭 | A-Priori·PCY 구현, 상품 쌍과 삼중항 탐색, 연관규칙 계산과 결과 검증 |
 
 Changes from the role proposal in plan §7: reproduction rehearsals moved from evaluation to data, and the customer-concentration check (computed in `evaluate.py`) moved from data to evaluation.
 

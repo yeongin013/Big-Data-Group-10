@@ -55,6 +55,7 @@ Run the tests (no pytest needed):
 
 ```bash
 python -m tests.test_textbook && python -m tests.test_pcy_hash && python -m tests.test_evaluate && python -m tests.test_answer_key
+python -m tests.test_answer_check && python -m tests.test_api   # agent, API and answer check, offline
 ```
 
 | ID | Output in `results/` |
@@ -80,6 +81,32 @@ python -m src.agent --ask "What goes with WHITE HANGING HEART T-LIGHT HOLDER?"
 ```
 
 TLS uses the `certifi` CA bundle, so no certificate setup is needed.
+
+Connection test (plan §3.4, due 11/17). It sends one plain message and one tool-call request, then appends the model ID, the date, and whether a tool call came back to `results/solar_ping.jsonl`:
+
+```bash
+python -m src.agent --ping
+```
+
+## Demo and rule API
+
+The demo page and the rule API use only the Python standard library. Start them with:
+
+```bash
+python -m src.api            # http://127.0.0.1:8000
+```
+
+- **Ask the agent:** type a question and choose Solar with tools, Solar with the pasted table, or the keyword router. The page shows the answer, every tool call with the rules it returned, and an answer check. Without a key, only the router is available.
+- **Browse rules:** the three agent tools (`rules_for`, `top_rules`, `season_filter`) as forms.
+- **API:** `GET /api/rules_for?product=`, `GET /api/top_rules?min_support=&min_confidence=&limit=`, `GET /api/season_filter?period=`, `POST /api/ask {"question", "method"}`, `GET /api/health`. See `src/api.py`.
+
+**Answer check (`src/answer_check.py`).** It applies the plan §3.4 number rules automatically. Every number in an answer must appear in the question or in the output of a tool called for that answer. Ratios may differ by ±0.005, counts must match exactly, and 43% counts as 0.43. Answers are labelled `ok`, `invented` (a number with no source), `no_numbers` (rules were found but none are cited), `refusal`, or `unclear`. To check a whole run log:
+
+```bash
+python -m src.answer_check results/agent_runs.jsonl --questions QUESTIONS.csv --out answer_check.csv
+```
+
+This is a check, not the H3 grade. The graders still compare answers with the answer key. The example questions on the demo page were written for the demo and do not come from the H3 question set.
 
 ## Plan
 

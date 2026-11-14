@@ -31,7 +31,7 @@ Raw data is not committed to this repository. To download it, run:
 python scripts/download_data.py
 ```
 
-The script saves `data/raw/online_retail_II.xlsx` and checks its SHA-256 checksum. It needs only the Python standard library. If you get an SSL certificate error on macOS, run it as `SSL_CERT_FILE=/etc/ssl/cert.pem python scripts/download_data.py`.
+The script saves `data/raw/online_retail_II.xlsx` and checks its SHA-256 checksum. It uses the `certifi` CA bundle from `requirements.txt`, so install the requirements first. Without `certifi` it falls back to the system CA store. If that gives an SSL certificate error on macOS, run it as `SSL_CERT_FILE=/etc/ssl/cert.pem python scripts/download_data.py`.
 
 ## Method
 

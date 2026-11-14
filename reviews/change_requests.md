@@ -1,6 +1,6 @@
 # 담당자별 수정 요청 (2026-11-14)
 
-근거: [`merge_review.md`](merge_review.md) (브랜치 병합 검토, 11/11)와 [`draft1_review.md`](draft1_review.md) (1차 리뷰)에서 아직 열려 있는 항목. 11/14 기준으로 세 브랜치(`Hyeonseop` f874e91, `goeun` db57a5f, `yuchan-final` f125da7)에는 11/11 이후 새 커밋이 없다.
+근거: [`merge_review.md`](merge_review.md) (브랜치 병합 검토, 11/11)와 [`draft1_review.md`](draft1_review.md) (1차 리뷰)에서 아직 열려 있는 항목. 11/14 기준으로 `Hyeonseop`(f874e91)과 `goeun`(db57a5f)에는 11/11 이후 새 커밋이 없다. `yuchan-final`에는 11/14에 `dcd8756`이 올라왔다 (유찬 절 끝의 "11/14 커밋 `dcd8756` 검토" 참고).
 
 진행 방법:
 
@@ -58,6 +58,22 @@ H3 질문과 정답지는 `agent-v1` 태그 전까지 에이전트 담당에게 
 - [ ] 7. `run_all.py` T6: `agent_runs.jsonl`과 `h3_grades.csv`가 둘 다 있으면 `NotImplementedError`로 멈추지 말고 경고만 낸다.
 - [ ] 8. 새 H3 질문 초안을 검토한다. 파일은 레포 밖에 있고, 최영인이 따로 공유한다. 11/17에 질문 파일 SHA-256을 커밋한다.
 - [ ] 선택. 새 입력 검사를 확인하는 테스트를 1~2개 넣는다.
+
+### 11/14 커밋 `dcd8756` 검토 ("Submit weekly T3 and T5 results")
+
+이 커밋은 `results/`의 CSV 3개(`null_check.csv`, `t5_sensitivity.csv`, `timings.csv`)만 바꿨다. 위 요청은 모두 그대로 열려 있다.
+
+- 요청 2와 반대다. 세 CSV를 `main` 버전으로 되돌리지 않고, 다른 기기에서 다시 만들어 덮어썼다.
+- `null_check.csv`의 `support_0.25`, `b1` 행이 100회에서 20회로 줄었다. 11/11 결정은 100회 유지다. 1회 시간도 `main`보다 2~5배 길다(`b1` 25.9초 대 5.5초).
+- CSV를 브랜치 코드로 다시 만들 수 없다. `null_check.csv`에 `max_product_support` 열이 생기고 `seconds` 열이 없어졌다. 그런데 브랜치의 `src/`에는 `max_product_support`를 만드는 코드가 없고, `null_model.py:132`는 아직 `seconds`를 쓴다. 커밋하지 않은 코드로 만들었거나 손으로 고친 파일이다.
+- `t5_sensitivity.csv`의 `min_ci_cust_lo`가 바뀌었다(기준 줄 0.04336 → 0.04360). 요청 1(seed)을 반영하지 않았기 때문이다. 판정(H1 No, H2 Yes, changed 모두 False)은 같다.
+- T5 bootstrap은 여전히 100회다 (`run_all.py:108`, 요청 4).
+- H3 파일 5개가 그대로 있다 (요청 3).
+
+추가 요청:
+
+- [ ] 9. `max_product_support`를 만드는 코드를 커밋한다 (요청 6의 일부). 결과 CSV는 코드와 함께만 바꾼다.
+- [ ] 10. `dcd8756`의 CSV 3개를 `main` 버전으로 되돌린다. 결과는 병합 뒤 기준 PC에서 `run_all`로 다시 만든다.
 
 ## 최영인 (데이터·재현)
 

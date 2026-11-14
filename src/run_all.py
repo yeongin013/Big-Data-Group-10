@@ -5,6 +5,7 @@ python -m src.run_all --only T2  # one ID
 """
 import argparse
 import json
+import platform
 from pathlib import Path
 
 import matplotlib
@@ -88,7 +89,9 @@ def t3(b):
     rows = []
     for sp in null_model.SPACES:
         bs = null_model.space_baskets(b, sp)
-        rows.append({"n_baskets": len(bs), **null_model.null_rule_ratio(bs, sp), **null_model.fisher_pass(bs, sp)})
+        max_support = null_model.max_product_support(bs)
+        rows.append({"n_baskets": len(bs), "max_product_support": max_support,
+                     **null_model.null_rule_ratio(bs, sp), **null_model.fisher_pass(bs, sp)})
     pd.DataFrame(rows).to_csv(RESULTS / "null_check.csv", index=False)
     print(pd.DataFrame(rows).to_string(index=False))
 
@@ -105,7 +108,7 @@ def t4(b):
 def t5(b):
     """T5: §4 sensitivity rows (n_boot=100 per plan §6 fallback; switch to 1000 for the final run)."""
     from src import evaluate
-    t = evaluate.sensitivity(b, n_boot=100)
+    t = evaluate.sensitivity(b, n_boot=1000)
     t.to_csv(RESULTS / "t5_sensitivity.csv", index=False)
     print(t.to_string(index=False))
 
@@ -116,7 +119,7 @@ def t6(b):
     if not (runs.exists() and grades.exists()):
         print("T6 skipped: results/agent_runs.jsonl or results/h3_grades.csv not present yet")
         return
-    raise NotImplementedError("T6 table: add after grading format is fixed (12/1 sprint)")
+    print("Warning: T6 grading table generation is not implemented; existing runs and grades were preserved.")
 
 
 STEPS = {"T1": t1, "F1": f1, "F2": f2, "T2": t2, "T3": t3, "T4": t4, "T5": t5, "T6": t6}

@@ -44,6 +44,11 @@ def test_fisher_small_case():
     assert abs(nm.fisher_greater(4, 4, 4, 10) - 1 / math.comb(10, 4)) < 1e-12
 
 
+def test_max_product_support():
+    assert nm.max_product_support([]) == 0.0
+    assert nm.max_product_support([(1, 2), (1,), (2,)]) == 2 / 3
+
+
 def test_shuffle_keeps_margins():
     bs = [tuple("abc"), tuple("ab"), tuple("acd"), tuple("bd"), tuple("a")]
     out, left = nm.shuffle(bs, np.random.default_rng(0))
@@ -58,6 +63,24 @@ def test_split_reaches_target():
     assert list(ids) == [2, 2, 0, 4, 3, 1] and list(sizes) == [1, 1, 2, 1, 1]  # members by number, then guests by invoice
     m = ev._split(ids, sizes, 3, np.random.default_rng(0))
     assert m.sum() >= 3 and m[0] == m[1]  # same customer stays on one side
+
+
+def test_ci_is_reproducible():
+    d = np.array([0.0, 1.0, 1.0, 0.0])
+    unit = np.array(["a", "a", "b", "b"])
+    assert np.array_equal(ev._ci(d, unit, 100, seed=7), ev._ci(d, unit, 100, seed=7))
+
+
+def test_sensitivity_helpers():
+    baskets = pd.DataFrame({
+        "items": [("a", "b"), ("a", "c"), ("a", "b"), ("d",)],
+        "year": [1, 1, 2, 2],
+        "customer": [1, 2, 1, -1],
+    })
+    rules = pd.DataFrame({"antecedent": ["a"], "consequent": ["b"]})
+    assert len(ev.top5_filter(rules, baskets)) <= 1
+    trimmed = ev.drop_top1pct(baskets)
+    assert set(trimmed.columns) == set(baskets.columns)
 
 
 if __name__ == "__main__":

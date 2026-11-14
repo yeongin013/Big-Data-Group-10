@@ -19,7 +19,7 @@
 
 ### high
 
-1. `.gitignore`: `data/`, `.venv/`가 심볼릭 링크를 막지 못한다. 원본 체크아웃에는 링크가 없고, worktree(`.claude/worktrees/draft-v1`)의 `data`, `.venv` 링크만 미추적으로 보인다. 거기서 `git add -A`를 하면 커밋될 수 있다. 슬래시 없는 `data`, `.venv`로 바꾼다.
+1. `.gitignore`: `data/`, `.venv/`가 심볼릭 링크를 막지 못한다. 원본 체크아웃에는 링크가 없고, worktree(`.claude/worktrees/draft-v1`)의 `data`, `.venv` 링크만 미추적으로 보인다. 거기서 `git add -A`를 하면 커밋될 수 있다. 슬래시 없는 `data`, `.venv`로 바꾼다. **해결 (11/11):** 슬래시 없는 패턴으로 바꿨다. `git check-ignore`로 링크가 무시되는 것을 확인했다.
 2. `src/agent.py` `season_filter`: 키워드를 부분 문자열로 맞춘다. "christmas 2011", "summer season" 같은 데이터에 없는 기간(함정)에도 315개를 반환한다. "november 2010"은 0개를 반환한다. 연도와 월을 파싱하거나 period를 enum으로 바꾼다.
 3. TLS: venv Python(python.org 3.14)에 CA 인증서가 없어 Solar 호출이 `CERTIFICATE_VERIFY_FAILED`로 실패한다. `Install Certificates.command`를 실행하거나 `SSL_CERT_FILE=/etc/ssl/cert.pem`을 쓴다. README에 적는다. **해결 (11/5):** `agent.py`가 certifi CA 번들을 쓰고, README Solar 절에 적었다.
 
@@ -40,7 +40,7 @@
 
 - plan 수치 정정이 필요하다. 상품 수 4,877은 대문자 통일 전 값이고 실제는 4,707이다. 최대 장바구니 크기는 1,108이 아니라 1,106이다. plan은 동결이므로 보고서에 주석을 단다.
 - T3에 상품 support 최댓값(0.162)이 없다 (plan §1).
-- T1 로그에 장바구니 수와 상품 수 줄이 없다. `cleaning_log.csv`는 캐시를 처음 만들 때만 써진다.
+- T1 로그에 장바구니 수와 상품 수 줄이 없다. `cleaning_log.csv`는 캐시를 처음 만들 때만 써진다. **해결 (11/11):** 장바구니 수(39,516)와 상품 수(4,707) 줄을 데이터에서 계산해 추가했다. 로그 파일이 없으면 캐시를 다시 만들어 로그도 다시 쓴다.
 - 캐시 이름이 `lines_…`이다. plan은 `baskets_…`이다.
 - `timings.csv`의 CPU가 "arm"으로만 기록된다.
 - `min_count` 테스트가 없다. pytest가 없어 `python -m tests.x`로만 돈다. (README Reproduce 절에 실행 명령을 적었다.)
@@ -49,7 +49,7 @@
 - `rules_for("")`가 189개 전부를 반환한다. `top_rules(limit=-1)`도 결과를 낸다.
 - `.env` 탐색이 루트까지 올라간다. 기록되는 모델 ID가 응답 값이 아니라 상수다.
 - 붙여 넣기 프롬프트에는 규칙 약 504개(31k자)가 들어간다. plan은 약 200개로 가정했다.
-- F1의 2011-12는 9일뿐인 부분 월이다. 표시가 필요하다.
+- F1의 2011-12는 9일뿐인 부분 월이다. 표시가 필요하다. **해결 (11/11):** 2011-12 막대를 회색으로 그리고 "partial month, excluded" 범례를 달았다. `f1_monthly_baskets.csv`는 그대로다.
 - 가변 기본 인자 캐시와 `searchsorted` 역산은 학생이 설명하기 어렵다.
 
 ## 리뷰 이후 추가로 찾은 것 (11/5, 레포·문서 대조 점검)

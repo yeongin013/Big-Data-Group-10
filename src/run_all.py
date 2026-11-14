@@ -11,6 +11,7 @@ import matplotlib
 
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt  # noqa: E402
+from matplotlib.patches import Patch  # noqa: E402
 import pandas as pd  # noqa: E402
 
 from src import apriori, clean  # noqa: E402
@@ -19,16 +20,18 @@ RESULTS = clean.RESULTS
 
 
 def t1(b):
-    """T1: rows per cleaning step (written by clean.load_lines on first build)."""
-    log = pd.read_csv(RESULTS / "cleaning_log.csv")
+    """T1: rows per cleaning step, then basket and product counts (written by clean.load_lines when it builds)."""
+    log = pd.read_csv(clean.LOG)
     print(log.to_string(index=False))
 
 
 def f1(b):
-    """F1: baskets per month."""
+    """F1: baskets per month. 2011-12 (9 days) is drawn grey: partial month, excluded (plan §1)."""
     m = b.groupby(b.date.dt.to_period("M")).size()
     m.to_csv(RESULTS / "f1_monthly_baskets.csv", header=["baskets"])
-    ax = m.plot(kind="bar", figsize=(10, 4), color="#4472c4")
+    partial = pd.Period("2011-12", "M")
+    ax = m.plot(kind="bar", figsize=(10, 4), color=["#bbbbbb" if p == partial else "#4472c4" for p in m.index])
+    ax.legend(handles=[Patch(color="#bbbbbb", label="2011-12: partial month (9 days), excluded")], loc="upper left")
     ax.set_xlabel("month")
     ax.set_ylabel("baskets (invoices)")
     ax.set_title("Baskets per month")

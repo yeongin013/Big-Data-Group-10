@@ -13,7 +13,7 @@
 | 2023270643 | 유찬 | 이후 기간의 규칙 검증, 인기 상품 기준선 비교, 실행 시간과 메모리 측정 |
 | 2023271305 | 이현섭 | A-Priori·PCY 구현, 상품 쌍과 삼중항 탐색, 연관규칙 계산과 결과 검증 |
 
-Changes from the role proposal in plan §7: reproduction rehearsals moved from evaluation to data, and the customer-concentration check (computed in `evaluate.py`) moved from data to evaluation.
+Changes from the role proposal in plan §7: 정고은 and 이현섭 swapped the algorithm and agent roles, and run-time and memory measurement moved to evaluation. The H3 question set is written and graded by the data and evaluation members, and the agent member does not see it before the `agent-v1` tag (plan §3.4).
 
 ## Problem
 
@@ -31,7 +31,7 @@ Raw data is not committed to this repository. To download it, run:
 python scripts/download_data.py
 ```
 
-The script saves `data/raw/online_retail_II.xlsx` and checks its SHA-256 checksum. It needs only the Python standard library. If you get an SSL certificate error on macOS, run it as `SSL_CERT_FILE=/etc/ssl/cert.pem python scripts/download_data.py`.
+The script saves `data/raw/online_retail_II.xlsx` and checks its SHA-256 checksum. It uses the `certifi` CA bundle from `requirements.txt`, so install the requirements first. Without `certifi` it falls back to the system CA store. If that gives an SSL certificate error on macOS, run it as `SSL_CERT_FILE=/etc/ssl/cert.pem python scripts/download_data.py`.
 
 ## Method
 

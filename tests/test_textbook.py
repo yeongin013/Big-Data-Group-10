@@ -13,7 +13,8 @@ def test_apriori():
     r = apriori.run(BASKETS, THRESHOLD)
     assert r["frequent"] == ["a", "b", "c", "d"]
     assert r["pairs"] == EXPECTED_PAIRS
-    assert r["n_candidates"] == 6  # C(4, 2) cells in the triangular array
+    assert r["n_candidates_all"] == 6  # C(4, 2) cells in the triangular array
+    assert r["n_candidates"] == 6
     assert r["n_occurring"] == 6  # ab ac ad bc bd cd all appear at least once
 
 
@@ -35,7 +36,13 @@ def test_rules():
     assert list(r.antecedent[:2]) == ["a", "b"]  # sorted by confidence, then support
 
 
+def test_confidence_filter():
+    # Both directions have lift 4/3. Only b -> a meets confidence >= 0.5.
+    rules = apriori.rules({("a", "b"): 2}, {"a": 5, "b": 3}, n=10)
+    assert list(zip(rules.antecedent, rules.consequent)) == [("b", "a")]
+
+
 if __name__ == "__main__":
-    for t in (test_apriori, test_pcy_agrees, test_rules):
+    for t in (test_apriori, test_pcy_agrees, test_rules, test_confidence_filter):
         t()
         print("ok", t.__name__)

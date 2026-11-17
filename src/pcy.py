@@ -94,7 +94,9 @@ def compare(baskets, levels=(0.02, 0.01, 0.005, 0.0025), buckets=(65_521, 1_048_
     baskets = list(baskets)
     n = len(baskets)
     det, tim = [], []
-    env = {"processor": platform.processor(), "python": platform.python_version(), "repeats": repeats}
+    uname = platform.uname()
+    processor = uname.processor or platform.processor() or uname.machine
+    env = {"processor": processor, "python": platform.python_version(), "repeats": repeats}
     for s in levels:
         t = apriori.min_count(n, s)
         a, secs, peak = _timed(lambda: apriori.run(baskets, t), repeats)

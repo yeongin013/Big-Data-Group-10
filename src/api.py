@@ -17,6 +17,7 @@ The server binds to 127.0.0.1 by default. It only serves the product-level rule 
 import argparse
 import json
 import math
+import re
 import time
 import traceback
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -125,12 +126,20 @@ class Handler(BaseHTTPRequestHandler):
         self.wfile.write(raw)
 
     def _handle(self, method):
-        if method == "GET" and urlparse(self.path).path in ("/", "/index.html"):
-            return self._send(200, PAGE.read_bytes(), "text/html; charset=utf-8")
         try:
+            host = self.headers.get("Host", "")
+            if not re.fullmatch(r"(?:127\.0\.0\.1|localhost)(?::\d{1,5})?", host, re.I):
+                raise ApiError(403, "Host must be localhost or 127.0.0.1")
+            if method == "GET" and urlparse(self.path).path in ("/", "/index.html"):
+                return self._send(200, PAGE.read_bytes(), "text/html; charset=utf-8")
             body = None
             if method == "POST":
-                n = int(self.headers.get("Content-Length") or 0)
+                if self.headers.get_content_type() != "application/json":
+                    raise ApiError(415, "Content-Type must be application/json")
+                raw_length = self.headers.get("Content-Length", "")
+                if not re.fullmatch(r"[0-9]+", raw_length):
+                    raise ApiError(400, "Content-Length must be a non-negative integer")
+                n = int(raw_length)
                 if n > 64 * 1024:
                     raise ApiError(413, "request body too large")
                 try:

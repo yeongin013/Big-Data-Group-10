@@ -38,7 +38,7 @@ The script saves `data/raw/online_retail_II.xlsx` and checks its SHA-256 checksu
 1. **Frequent itemsets (MMDS Chapter 6):** Implement A-Priori and PCY to find frequent item pairs (triples reported as counts). Derive association rules with support, confidence, and lift. Compare the two algorithms on memory use and run time.
 2. **Validation:** Mine rules on an earlier time window and check whether they still hold on a later window. This addresses the risk of false discoveries (MMDS §1.2, Bonferroni's principle).
 3. **Baseline:** Compare HitRate@5 on held-out items against a popularity baseline (the five most common year-1 products) and against unfiltered pair rules.
-4. **LLM agent:** Build an agent on Upstage Solar with tool calls such as `rules_for(product)`, `top_rules(min_support, min_confidence)`, and `season_filter(period)`. The agent answers questions such as "What should we bundle for the Christmas season?" and cites the supporting support and confidence values.
+4. **LLM agent:** Build an agent on Upstage Solar with tool calls such as `rules_for(product)`, `top_rules(min_support, min_confidence)`, and `season_filter(period)`. The agent answers questions such as "Which rules have high confidence during the peak season?" and cites the supporting support and confidence values.
 
 ## Reproduce
 

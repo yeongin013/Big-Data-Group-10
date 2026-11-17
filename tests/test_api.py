@@ -2,11 +2,62 @@
 Run: python -m tests.test_api
 """
 import json
+import http.client
+import tempfile
 import threading
 import urllib.error
 import urllib.request
+from unittest.mock import patch
 
 from src import agent, api
+
+
+def test_peak_periods_and_limits():
+    cases = {"christmas 2011": False, "summer season": False, "november 2010": True,
+             "christmas season": True, "peak season": True, "크리스마스 성수기": True,
+             "Christmas 2010": True, "2009-12": True, "2010-11": True,
+             "december 2009": True, "2010-12": False, "november 2009": False}
+    for period, expected in cases.items():
+        assert bool(agent.season_filter(period)["rules"]) == expected, period
+        tool, args = agent.route(period)
+        assert tool == "season_filter" and bool(agent.TOOLS[tool](**args)["rules"]) == expected, period
+    assert len(agent.top_rules(limit=-1)["rules"]) == 1
+    assert len(agent.top_rules(limit=1000)["rules"]) <= 500
+    assert agent.route("top rules support 0.02 confidence 0.8")[1] == {
+        "min_support": 0.02, "min_confidence": 0.8}
+
+
+def test_eval_log_metadata():
+    with tempfile.TemporaryDirectory() as d:
+        from pathlib import Path
+        d = Path(d)
+        (d / 'questions.csv').write_text('id,question\n1,example\n', encoding='utf-8')
+        (d / 'key.csv').write_text('id\n1\n', encoding='utf-8')
+        def fake(q, trace):
+            agent.REQUEST_META.get()['models'].append('served-model')
+            agent.REQUEST_META.get()['http_retries'].append({'attempt': 1, 'status': 503})
+            return 'answer', []
+        agent.run_eval(d / 'questions.csv', {'tool': fake}, d / 'runs.jsonl', d / 'key.csv')
+        records = [json.loads(line) for line in (d / 'runs.jsonl').read_text(encoding='utf-8').splitlines()]
+        assert len(records) == 3 and len({r['execution_id'] for r in records}) == 1
+        assert all(r['model'] == 'served-model' and len(r['questions_sha256']) == 64
+                   and r['http_retries'][0]['status'] == 503 for r in records)
+
+
+def test_transient_http_retry():
+    from io import BytesIO
+    error = urllib.error.HTTPError('https://example.test', 503, 'unavailable', {}, None)
+    response = BytesIO(b'{"model":"served"}')
+    meta = {'models': [], 'http_retries': []}
+    token = agent.REQUEST_META.set(meta)
+    try:
+        with patch.object(agent, 'api_key', return_value='test-key'), \
+             patch.object(agent.urllib.request, 'urlopen', side_effect=[error, response]), \
+             patch.object(agent.time, 'sleep'):
+            assert agent.post({})['model'] == 'served'
+    finally:
+        agent.REQUEST_META.reset(token)
+    assert meta['models'] == ['served'] and meta['http_retries'] == [{'attempt': 1, 'status': 503}]
 
 
 def _fake_chat(script):
@@ -76,6 +127,19 @@ def test_http_endpoints():
         assert _get(base, "/api/nothing")[0] == 404
         assert _post(base, "/api/ask", {"question": ""})[0] == 400
         assert _post(base, "/api/ask", {"question": "x", "method": "gpt"})[0] == 400
+
+        conn = http.client.HTTPConnection('127.0.0.1', srv.server_port)
+        conn.request('GET', '/api/health', headers={'Host': 'example.org'})
+        assert conn.getresponse().status == 403
+        conn.close()
+        conn = http.client.HTTPConnection('127.0.0.1', srv.server_port)
+        conn.request('POST', '/api/ask', body='{}', headers={'Content-Type': 'text/plain'})
+        assert conn.getresponse().status == 415
+        conn.close()
+        conn = http.client.HTTPConnection('127.0.0.1', srv.server_port)
+        conn.request('POST', '/api/ask', body='', headers={'Content-Type': 'application/json', 'Content-Length': 'bad'})
+        assert conn.getresponse().status == 400
+        conn.close()
 
         s, r = _post(base, "/api/ask", {"question": "What goes with 85123A?", "method": "router"})
         assert s == 200 and r["tool_calls"][0]["tool"] == "rules_for" and r["check"]["verdict"] == "ok"

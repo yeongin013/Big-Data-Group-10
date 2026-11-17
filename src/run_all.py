@@ -127,6 +127,9 @@ if __name__ == "__main__":
     a = p.parse_args()
     RESULTS.mkdir(exist_ok=True)
     baskets = clean.load_baskets()
+    if a.only is None:
+        from src import agent
+        agent.build_tables()
     for k, f in STEPS.items():
         if a.only in (None, k):
             print(f"== {k}")

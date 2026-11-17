@@ -1,7 +1,7 @@
 """Solar tool-calling agent for H3 (plan §3.4).
 
     python -m src.agent --ask "question"             one question, tool Solar (needs UPSTAGE_API_KEY)
-    python -m src.agent --eval QUESTIONS.csv [--key ANSWER_KEY.csv]
+    python -m src.agent --eval QUESTIONS.csv --key ANSWER_KEY.csv
                                                       tool Solar and paste-in Solar, 3 runs each
     python -m src.agent --router QUESTIONS.csv        keyword router baseline (no key, no LLM)
     python -m src.agent --ping                        Solar connection test (plain chat + one tool call)
@@ -11,6 +11,7 @@ Only product-level rule tables and the question text are sent to the API. No cus
 """
 import argparse
 import csv
+import contextvars
 import datetime
 import functools
 import hashlib
@@ -18,6 +19,8 @@ import json
 import os
 import re
 import ssl
+import time
+import uuid
 import urllib.error
 import urllib.request
 
@@ -35,6 +38,7 @@ RULES_Y1 = clean.RESULTS / "rules_y1.csv"
 RULES_SEASON = clean.RESULTS / "rules_season.csv"
 SEASON_MONTHS = ("2009-12", "2010-11")
 SEASON_WORDS = ("christmas", "xmas", "peak", "holiday", "season", "성수기", "크리스마스") + SEASON_MONTHS
+REQUEST_META = contextvars.ContextVar("request_meta", default=None)
 COLS = ["rule_id", "antecedent", "antecedent_name", "consequent", "consequent_name",
         "count", "support", "confidence", "lift"]
 
@@ -93,27 +97,47 @@ def rules_for(product):
     y1, _ = tables()
     q = str(product).strip()
     if not q:
-        return _result(y1.iloc[0:0], query=q, table="Y1 (2009-12..2010-11)")
+        return _result(y1.iloc[0:0], query=q, table="year 1 (2009-12..2010-11)")
     hit = lambda code, name: (code == q.upper()) | name.str.contains(q, case=False, regex=False, na=False)
     a, c = hit(y1.antecedent, y1.antecedent_name), hit(y1.consequent, y1.consequent_name)
-    return _result(y1[a | c], query=q, table="Y1 (2009-12..2010-11)")
+    return _result(y1[a | c], query=q, table="year 1 (2009-12..2010-11)")
 
 
 def top_rules(min_support=SUPPORT, min_confidence=CONF, limit=10):
     """Y1 rules with support >= min_support and confidence >= min_confidence, highest confidence first."""
     y1, _ = tables()
     df = y1[(y1.support >= float(min_support)) & (y1.confidence >= float(min_confidence))]
-    res = _result(df.head(int(limit)), min_support=min_support, min_confidence=min_confidence,
-                  table="Y1 (2009-12..2010-11)")
+    res = _result(df.head(max(1, min(int(limit), 500))), min_support=min_support, min_confidence=min_confidence,
+                  table="year 1 (2009-12..2010-11)")
     res["n_matching"] = len(df)
     return res
+
+
+def is_peak_period(period):
+    """Recognize the pooled peak period; reject explicit unrelated years, months and seasons."""
+    p = str(period).lower().strip()
+    if not p or re.search(r"summer|spring|autumn|fall|winter|여름|봄|가을|겨울", p):
+        return False
+    years = re.findall(r"(?<!\d)(?:19|20)\d{2}(?!\d)", p)
+    if any(y not in ("2009", "2010") for y in years):
+        return False
+    dates = re.findall(r"(?<!\d)((?:19|20)\d{2})[-/.](0?[1-9]|1[0-2])(?!\d)", p)
+    if any(f"{y}-{int(m):02d}" not in SEASON_MONTHS for y, m in dates):
+        return False
+    months = re.findall(r"\b(january|february|march|april|may|june|july|august|september|october|november|december)\b", p)
+    if any(m not in ("november", "december") for m in months):
+        return False
+    if months and years and any((m, y) not in (("december", "2009"), ("november", "2010")) for m in months for y in years):
+        return False
+    if dates or months:
+        return bool(dates or (months and years))
+    return any(w in p for w in ("christmas", "xmas", "peak", "holiday", "성수기", "크리스마스"))
 
 
 def season_filter(period):
     """Peak-season rules (Y1 baskets in 2009-12 and 2010-11). Other periods are not in the data -> empty."""
     _, season = tables()
-    p = str(period).strip().lower()
-    if p not in SEASON_WORDS:
+    if not is_peak_period(period):
         return {"period": period, "n_rules": 0, "rules": [],
                 "message": f"Unknown period. Only the peak season ({', '.join(SEASON_MONTHS)}) is available."}
     return _result(season, period=period, table="peak season (2009-12 and 2010-11)")
@@ -135,10 +159,11 @@ TOOL_SPECS = [
     {"type": "function", "function": {
         "name": "season_filter", "description": "Rules mined only from the peak (Christmas) season baskets.",
         "parameters": {"type": "object", "required": ["period"], "properties": {
-            "period": {"type": "string", "description": "e.g. 'christmas', 'peak', '2010-11'"}}}}},
+            "period": {"type": "string", "description": "Peak/Christmas season, 2009-12 or 2010-11 (also December 2009, November 2010). Other periods return no rules."}}}}},
 ]
 
 SYSTEM = ("You answer questions about product association rules from a UK online gift retailer. "
+          "A → B means baskets with A also contain B; there is no order. "
           "Answer only from tool outputs. Cite the support and confidence numbers you use. "
           "Do not compute or invent other numbers. If the tools return no rules, say you cannot answer. "
           "Answer in the language of the question.")
@@ -170,13 +195,23 @@ def post(body):
     """POST one chat-completions request. Returns the full response JSON."""
     req = urllib.request.Request(URL, json.dumps(body).encode(), {
         "Authorization": f"Bearer {api_key()}", "Content-Type": "application/json"})
-    try:
-        with urllib.request.urlopen(req, timeout=120, context=SSL_CONTEXT) as r:
-            return json.load(r)
-    except urllib.error.HTTPError as e:
-        raise SystemExit(f"Solar API error {e.code}: {e.read().decode(errors='replace')[:500]}")
-    except urllib.error.URLError as e:
-        raise SystemExit(f"Solar API unreachable: {e.reason}")
+    for attempt in range(3):
+        try:
+            with urllib.request.urlopen(req, timeout=120, context=SSL_CONTEXT) as r:
+                response = json.load(r)
+            meta = REQUEST_META.get()
+            if meta is not None:
+                meta["models"].append(response.get("model"))
+            return response
+        except (urllib.error.HTTPError, urllib.error.URLError, TimeoutError) as e:
+            retryable = not isinstance(e, urllib.error.HTTPError) or e.code == 429 or 500 <= e.code <= 599
+            if not retryable or attempt == 2:
+                status = getattr(e, "code", None)
+                raise SystemExit(f"Solar API request failed: HTTP {status}" if status else "Solar API unreachable") from e
+            meta = REQUEST_META.get()
+            if meta is not None:
+                meta["http_retries"].append({"attempt": attempt + 1, "status": getattr(e, "code", None)})
+            time.sleep(2 ** attempt)
 
 
 def chat(messages, tools=None):
@@ -187,7 +222,7 @@ def chat(messages, tools=None):
 
 
 def ping():
-    """Connection test (plan §3.4, by 11/17): one plain chat and one forced tool call. Returns a record."""
+    """Connection test: one plain chat and one request with automatic tool selection."""
     t0 = datetime.datetime.now()
     plain = post({"model": MODEL, "temperature": 0,
                   "messages": [{"role": "user", "content": "Reply with the single word: ok"}]})
@@ -250,17 +285,19 @@ def ask_paste(question):
 def route(question):
     """Regex/keyword -> one tool call. Returns (tool, args) or None."""
     q = question.lower()
-    if any(w in q for w in SEASON_WORDS):
-        return "season_filter", {"period": q if re.search(r"\b20\d{2}\b|summer|여름", q) else "peak"}
+    if any(w in q for w in SEASON_WORDS) or re.search(r"november|december|summer|spring|autumn|fall|여름|봄|가을|\b20\d{2}[-/.]\d{1,2}\b", q):
+        return "season_filter", {"period": q}
     if re.search(r"\b(top|strongest|best|highest|above|over|least)\b", q):
-        nums = [float(x) / (100 if pct else 1) for x, pct in re.findall(r"(\d*\.?\d+)\s*(%?)", q)]
-        nums = [x for x in nums if x < 1]
-        return "top_rules", {"min_support": SUPPORT, "min_confidence": max(nums, default=CONF)}
+        def threshold(label, default):
+            match = re.search(label + r"[^\d]{0,30}(\d*\.?\d+)\s*(%?)", q)
+            return (float(match[1]) / (100 if match[2] else 1)) if match else default
+        return "top_rules", {"min_support": threshold("support", SUPPORT),
+                             "min_confidence": threshold("confidence", CONF)}
     if m := re.search(r"\b\d{5}[a-z]*\b", q):
         return "rules_for", {"product": m.group().upper()}
     y1, _ = tables()
     names = set(y1.antecedent_name.dropna()) | set(y1.consequent_name.dropna())
-    hits = sorted((n for n in names if n.lower() in q), key=len, reverse=True)
+    hits = sorted((n.strip() for n in names if n.strip() and n.strip().lower() in q), key=len, reverse=True)
     return ("rules_for", {"product": hits[0]}) if hits else None
 
 
@@ -288,14 +325,34 @@ def read_questions(path):
 
 def run_eval(path, methods, out, key_path=None):
     key_sha = hashlib.sha256(open(key_path, "rb").read()).hexdigest() if key_path else None
+    question_sha = hashlib.sha256(open(path, "rb").read()).hexdigest()
+    execution_id = str(uuid.uuid4())
     qs = read_questions(path)
     with open(out, "a", encoding="utf-8") as f:
         for method, fn in methods.items():
             for run in range(1, (1 if method == "router" else RUNS) + 1):
                 for qid, q in qs:
                     trace = []
-                    answer, calls = fn(q, trace) if method != "paste" else fn(q)
-                    rec = {"model": None if method == "router" else MODEL, "date": datetime.date.today().isoformat(),
+                    meta = {"models": [], "http_retries": []}
+                    token = REQUEST_META.set(meta)
+                    try:
+                        try:
+                            answer, calls = fn(q, trace) if method != "paste" else fn(q)
+                        except SystemExit as e:
+                            failure = {"method": method, "run": run, "question_id": qid,
+                                       "execution_id": execution_id, "questions_sha256": question_sha,
+                                       "answer_key_sha256": key_sha, "date": datetime.date.today().isoformat(),
+                                       "models_served": meta["models"], "http_retries": meta["http_retries"],
+                                       "error": str(e)}
+                            f.write(json.dumps(failure, ensure_ascii=False) + "\n")
+                            f.flush()
+                            raise
+                    finally:
+                        REQUEST_META.reset(token)
+                    rec = {"model": meta["models"][-1] if meta["models"] else None,
+                           "models_served": meta["models"], "http_retries": meta["http_retries"],
+                           "execution_id": execution_id, "questions_sha256": question_sha,
+                           "date": datetime.date.today().isoformat(),
                            "method": method, "run": run, "question_id": qid, "answer": answer,
                            "tool_calls": calls, "tool_trace": trace, "answer_key_sha256": key_sha}
                     f.write(json.dumps(rec, ensure_ascii=False) + "\n")
@@ -308,7 +365,7 @@ def main():
     g.add_argument("--ask")
     g.add_argument("--eval", metavar="QUESTIONS_PATH")
     g.add_argument("--router", metavar="QUESTIONS_PATH")
-    g.add_argument("--ping", action="store_true", help="Solar connection test; appends to results/solar_ping.jsonl")
+    g.add_argument("--ping", action="store_true", help="Solar connection test; appends to --out (default results/agent_runs.jsonl)")
     p.add_argument("--key", metavar="ANSWER_KEY_PATH", help="answer key; its SHA-256 goes into each record")
     p.add_argument("--out", default=clean.RESULTS / "agent_runs.jsonl")
     a = p.parse_args()
@@ -321,6 +378,8 @@ def main():
         answer, calls = ask_tools(a.ask)
         print(json.dumps(calls, ensure_ascii=False), answer, sep="\n")
     elif a.eval:
+        if not a.key:
+            p.error("--eval requires --key")
         api_key()  # fail before writing anything
         run_eval(a.eval, {"tool": ask_tools, "paste": ask_paste}, a.out, a.key)
     else:

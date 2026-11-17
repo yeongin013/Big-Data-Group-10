@@ -120,3 +120,46 @@
 ## 최영인 몫 수정
 
 로컬 브랜치 `worktree-agent-a75781705ff0eafae`의 커밋 `443efd0`에 있다. `.gitignore`가 심볼릭 링크도 무시한다. T1 로그에 장바구니 수(39,516)와 상품 수(4,707) 줄이 생겼고, 로그가 없으면 다시 만든다. F1에서 2011-12를 부분 월로 표시한다.
+
+## 시험 병합 (2026-11-17)
+
+대상: `main` (c473905)에 `origin/Hyeonseop` (f3c8216), `origin/goeun` (38be000), `origin/yuchan-final` (428a39e)을 이 순서로 합쳤다. 임시 worktree에서만 합쳤고, `main`과 원격 브랜치는 바꾸지 않았다. 기기는 기준 PC(최영인의 Mac)다.
+
+### 1단계: `Hyeonseop` → `goeun`
+
+- 충돌이 없다. `README.md`와 `src/run_all.py`는 자동으로 합쳐진다.
+- 테스트 7개 모듈이 모두 통과한다: `test_answer_check`, `test_answer_key`, `test_api`, `test_evaluate`, `test_pcy_hash`, `test_role2_integration`, `test_textbook`.
+- `python -m src.run_all` 전체가 성공한다(약 12분). T6은 "not present yet" 경고만 내고 넘어간다.
+
+| 결과 | `main`과 비교 |
+|---|---|
+| T1, F1, F2, T3 판정, T4, 규칙 표(189 / 315) | 같다. 규칙 표와 `h2.csv`는 바이트 단위로 같다 |
+| `null_check.csv` | 값이 같다(100회, 우연 규칙 비율 0 / 0.34% / 95% / 4.4%). 1회 시간만 다르고 `seconds` 열이 빠진다 |
+| `t5_sensitivity.csv` | 값이 같다. `seconds` 열만 다르다 |
+| `pcy_compare.csv` | 빈발 쌍과 PCY 후보 수가 같다. A-Priori `n_candidates`는 관측 후보 수가 된다(1%에서 252,748). PCY 메모리가 1바이트 늘어난다(비트맵 `ceil(B/8)`, H-5) |
+| 3개 조합 | T2가 "Frequent triples at support 1%: 103"을 출력한다 |
+| `timings.csv` | 결론이 바뀐다. 아래 표 |
+
+T2 시간과 메모리 (support 1%, 5회 중앙값):
+
+| 알고리즘 | 시간 | 최대 메모리(tracemalloc) |
+|---|---|---|
+| A-Priori (삼각 배열) | 0.129초 | 3.5MB |
+| PCY, B = 65,521 | 0.519초 | 174MB |
+| PCY, B = 1,048,573 | 0.404초 | 57MB |
+
+모든 support 수준에서 A-Priori가 PCY보다 빠르고 메모리도 적다. `main`의 `results/`는 PCY가 빠르다고 적고 있다. 보고서와 장표의 T2 해석을 이 결과에 맞춘다.
+
+### 2단계: 위에 `yuchan-final`
+
+- 충돌이 없다. `src/pcy.py`와 `src/run_all.py`는 자동으로 합쳐진다.
+- 테스트 7개 모듈이 모두 통과한다.
+- T2는 1단계와 같다. T5의 기준 줄 고객 CI 하한은 0.0436이고, 판정은 모두 같다(H2 Yes, changed False).
+- 보류 이유는 그대로다. H3 파일 5개(`tests/h3_questions.csv`, `tests/h3_answer_key.csv`, `results/h3_grading.csv`, `results/h3_router_runs_v2.jsonl`, `scripts/grade_h3.py`)가 합친 결과에 들어온다. `timings.csv`의 CPU가 아직 "arm"이다.
+
+### 병합 순서와 병합 뒤 할 일
+
+1. `Hyeonseop` → `goeun`을 병합한다.
+2. 기준 PC에서 `python -m src.run_all` 전체를 돌리고, 바뀐 `pcy_compare.csv`, `timings.csv`, `null_check.csv`, `t5_sensitivity.csv`를 커밋한다.
+3. README를 고친다. 테스트 명령에 `tests.test_role2_integration`을 넣는다. 결과 표의 "built by `src.agent` when missing"을 `run_all`이 만든다는 내용으로 바꾼다.
+4. `yuchan-final`은 H3 파일 제거와 CPU 이름 수정 뒤에 병합하고 T5를 다시 돌린다.

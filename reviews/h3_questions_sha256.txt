@@ -1,2 +1,5 @@
-File: tests/h3_questions.csv
+﻿File: tests/h3_questions.csv
 SHA-256: 090ed183aac65f33d8cd3a9be173c899d2af18eb8f0e245b191589360735ed68
+
+File: tests/h3_answer_key.csv
+SHA-256: d4a963158b1e382d6d9a75e6aad89ebc6c04aed3935cf62d243d2e4b01f181f3

@@ -105,14 +105,23 @@ def top_rules(min_support=SUPPORT, min_confidence=CONF, limit=10):
     return res
 
 
+PEAK_ALIASES = ("peak", "christmas", "xmas", "holiday", "성수기", "크리스마스") + SEASON_MONTHS
+
+
 def season_filter(period):
-    """Peak-season rules (Y1 baskets in 2009-12 and 2010-11). Other periods are not in the data -> empty."""
+    """Peak-season rules (Y1 baskets in 2009-12 and 2010-11). Other periods are not in the data -> empty.
+
+    Strict period parsing: the whole period string must name the peak season (an alias or
+    one of its months). Anything with another year, month or season word (e.g. "easter 2012",
+    "christmas 2012", "november 2010") is not in the data and returns no rules.
+    """
     _, season = tables()
     p = str(period).strip().lower()
-    if not any(w in p for w in SEASON_WORDS):
-        return {"period": period, "n_rules": 0, "rules": [],
-                "message": f"Unknown period. Only the peak season ({', '.join(SEASON_MONTHS)}) is available."}
-    return _result(season, period=period, table="peak season (2009-12 and 2010-11)")
+    words = set(re.split(r"[\s,/]+", p))
+    if words and words <= set(PEAK_ALIASES):
+        return _result(season, period=period, table="peak season (2009-12 and 2010-11)")
+    return {"period": period, "n_rules": 0, "rules": [],
+            "message": f"Unknown period. Only the peak season ({', '.join(SEASON_MONTHS)}) is available."}
 
 
 TOOLS = {"rules_for": rules_for, "top_rules": top_rules, "season_filter": season_filter}

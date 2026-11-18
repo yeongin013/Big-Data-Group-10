@@ -1,31 +1,31 @@
 id,question
-H3Q01,What do customers buy together with the CHILDS GARDEN FORK PINK?
-H3Q02,What sells together with product 22746?
-H3Q03,Which rules involve the PINK REGENCY TEACUP AND SAUCER?
-H3Q04,Show the strongest rules with confidence above 0.8.
-H3Q05,Show rules with confidence above 0.6.
-H3Q06,Which rules have support above 0.02 and confidence above 0.7?
-H3Q07,What are the top rules with confidence over 0.9?
-H3Q08,What should we bundle for the Christmas season?
-H3Q09,What products sell together during the peak season?
-H3Q10,Show the holiday season association rules.
-H3Q11,What sells together in 2009-12?
-H3Q12,Which products are associated in 2010-11?
-H3Q13,Find rules for product 22523.
-H3Q14,Find rules for product 22748.
-H3Q15,Show the best rules with confidence above 0.75.
-H3Q16,Show the top association rules.
-H3Q17,What goes with the CHILDS GARDEN TROWEL PINK?
-H3Q18,What goes with the GREEN REGENCY TEACUP AND SAUCER?
-H3Q19,Show the highest confidence rules.
-H3Q20,Which rules have confidence over 0.5?
-H3Q21,What sells together in summer 2012?
-H3Q22,What sells together in 2012-07?
-H3Q23,What goes with product 99999X?
-H3Q24,What sells together in spring 2015?
-H3Q25,Show rules for product DOES NOT EXIST 000.
-H3Q26,What happened to rules in 2021-01?
-H3Q27,Which products are associated in autumn 2020?
-H3Q28,What sells together in January 2013?
-H3Q29,Find rules for UNKNOWN PRODUCT 12345.
-H3Q30,Show the rules for a product that is not in the catalog.
+Q01,What do customers buy together with the SWEETHEART CERAMIC TRINKET BOX?
+Q02,Which products are bought with the RED HANGING HEART T-LIGHT HOLDER, and with what confidence?
+Q03,What goes with product 22423?
+Q04,How many rules have a confidence of at least 0.85?
+Q05,Which rules have a support of at least 3%?
+Q06,What is the single strongest rule by confidence?
+Q07,What do people buy with the KEY FOB , SHED?
+Q08,What goes with the HAND WARMER UNION JACK?
+Q09,What sells with the toy storage box that has the astronaut boy design?
+Q10,What do customers buy with the coffee cup that shows a dog and a ball?
+Q11,What goes with the ceramic strawberry jewellery box?
+Q12,What sells with the metal sign for the toilet door?
+Q13,What do customers pair with the Scottish terrier hand warmer?
+Q14,What goes with the felt rabbit pillow?
+Q15,What do buyers of the big wicker heart also buy?
+Q16,What goes with the cherry cake piggy bank?
+Q17,"Which has more rules, the SPACEBOY LUNCH BOX or the LUNCH BAG RED RETROSPOT? Give the count for each."
+Q18,"Do the JUMBO BAG OWLS and the JUMBO BAG TOYS lead to the same product? Give the confidence for each."
+Q19,"A customer has the CHARLIE + LOLA RED HOT WATER BOTTLE and the HOT WATER BOTTLE I AM SO POORLY. What should we suggest for each one?"
+Q20,"We sell the PACK OF 72 SKULL CAKE CASES and the PACK OF 60 DINOSAUR CAKE CASES. Which one leads to the PACK OF 72 RETROSPOT CAKE CASES with higher confidence?"
+Q21,How does the confidence of SWEETHEART CERAMIC TRINKET BOX -> STRAWBERRY CERAMIC TRINKET BOX differ between the peak season and year 1 as a whole?
+Q22,What should we place next to the CHRISTMAS LIGHTS 10 SANTAS during the holiday season?
+Q23,"During the peak season, what goes with the PAPER CHAIN KIT RETROSPOT?"
+Q24,"In the Christmas season, what do buyers of the ALARM CLOCK BAKELIKE IVORY also buy?"
+Q25,What sells together with the GLOW-IN-THE-DARK UNICORN LAMP?
+Q26,What do customers buy with product 47000Q?
+Q27,What should we bundle for Easter 2012?
+Q28,Which products sold together at Christmas 2012?
+Q29,What do customers usually buy with the PARTY BUNTING?
+Q30,Is the DOORMAT UNION FLAG a good bundle with the SET/5 RED RETROSPOT LID GLASS BOWLS?

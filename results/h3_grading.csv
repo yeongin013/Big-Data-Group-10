@@ -1,31 +1,31 @@
-id,kind,expected_tool,actual_tools,passed,answer_preview
-H3Q01,answer,rules_for,rules_for,True,"2 rules found. 22523 (CHILDS GARDEN FORK PINK) -> 22521 (CHILDS GARDEN TROWEL PINK): support 0.0102, confidence 0.9309; 22521 (CHILDS GARDEN TROWEL PINK) -> 225"
-H3Q02,answer,rules_for,rules_for,True,"4 rules found. 22746 (POPPY'S PLAYHOUSE LIVINGROOM ) -> 22748 (POPPY'S PLAYHOUSE KITCHEN): support 0.0107, confidence 0.8983; 22746 (POPPY'S PLAYHOUSE LIVINGROO"
-H3Q03,answer,rules_for,rules_for,True,"4 rules found. 22698 (PINK REGENCY TEACUP AND SAUCER) -> 22697 (GREEN REGENCY TEACUP AND SAUCER): support 0.0118, confidence 0.8657; 22698 (PINK REGENCY TEACUP "
-H3Q04,answer,top_rules,top_rules,True,"7 rules found. 22523 (CHILDS GARDEN FORK PINK) -> 22521 (CHILDS GARDEN TROWEL PINK): support 0.0102, confidence 0.9309; 22746 (POPPY'S PLAYHOUSE LIVINGROOM ) ->"
-H3Q05,answer,top_rules,top_rules,True,"10 rules found. 22523 (CHILDS GARDEN FORK PINK) -> 22521 (CHILDS GARDEN TROWEL PINK): support 0.0102, confidence 0.9309; 22746 (POPPY'S PLAYHOUSE LIVINGROOM ) -"
-H3Q06,answer,top_rules,top_rules,True,"10 rules found. 22523 (CHILDS GARDEN FORK PINK) -> 22521 (CHILDS GARDEN TROWEL PINK): support 0.0102, confidence 0.9309; 22746 (POPPY'S PLAYHOUSE LIVINGROOM ) -"
-H3Q07,answer,top_rules,top_rules,True,"1 rules found. 22523 (CHILDS GARDEN FORK PINK) -> 22521 (CHILDS GARDEN TROWEL PINK): support 0.0102, confidence 0.9309"
-H3Q08,answer,season_filter,season_filter,True,"315 rules found. 22747 (POPPY'S PLAYHOUSE BATHROOM) -> 22746 (POPPY'S PLAYHOUSE LIVINGROOM ): support 0.0169, confidence 0.9136; 22747 (POPPY'S PLAYHOUSE BATHRO"
-H3Q09,answer,season_filter,season_filter,True,"315 rules found. 22747 (POPPY'S PLAYHOUSE BATHROOM) -> 22746 (POPPY'S PLAYHOUSE LIVINGROOM ): support 0.0169, confidence 0.9136; 22747 (POPPY'S PLAYHOUSE BATHRO"
-H3Q10,answer,season_filter,season_filter,True,"315 rules found. 22747 (POPPY'S PLAYHOUSE BATHROOM) -> 22746 (POPPY'S PLAYHOUSE LIVINGROOM ): support 0.0169, confidence 0.9136; 22747 (POPPY'S PLAYHOUSE BATHRO"
-H3Q11,answer,season_filter,season_filter,True,"315 rules found. 22747 (POPPY'S PLAYHOUSE BATHROOM) -> 22746 (POPPY'S PLAYHOUSE LIVINGROOM ): support 0.0169, confidence 0.9136; 22747 (POPPY'S PLAYHOUSE BATHRO"
-H3Q12,answer,season_filter,season_filter,True,"315 rules found. 22747 (POPPY'S PLAYHOUSE BATHROOM) -> 22746 (POPPY'S PLAYHOUSE LIVINGROOM ): support 0.0169, confidence 0.9136; 22747 (POPPY'S PLAYHOUSE BATHRO"
-H3Q13,answer,rules_for,rules_for,True,"2 rules found. 22523 (CHILDS GARDEN FORK PINK) -> 22521 (CHILDS GARDEN TROWEL PINK): support 0.0102, confidence 0.9309; 22521 (CHILDS GARDEN TROWEL PINK) -> 225"
-H3Q14,answer,rules_for,rules_for,True,"4 rules found. 22746 (POPPY'S PLAYHOUSE LIVINGROOM ) -> 22748 (POPPY'S PLAYHOUSE KITCHEN): support 0.0107, confidence 0.8983; 22745 (POPPY'S PLAYHOUSE BEDROOM )"
-H3Q15,answer,top_rules,top_rules,True,"10 rules found. 22523 (CHILDS GARDEN FORK PINK) -> 22521 (CHILDS GARDEN TROWEL PINK): support 0.0102, confidence 0.9309; 22746 (POPPY'S PLAYHOUSE LIVINGROOM ) -"
-H3Q16,answer,top_rules,top_rules,True,"10 rules found. 22523 (CHILDS GARDEN FORK PINK) -> 22521 (CHILDS GARDEN TROWEL PINK): support 0.0102, confidence 0.9309; 22746 (POPPY'S PLAYHOUSE LIVINGROOM ) -"
-H3Q17,answer,rules_for,rules_for,True,"4 rules found. 22523 (CHILDS GARDEN FORK PINK) -> 22521 (CHILDS GARDEN TROWEL PINK): support 0.0102, confidence 0.9309; 22520 (CHILDS GARDEN TROWEL BLUE ) -> 22"
-H3Q18,answer,rules_for,rules_for,True,"5 rules found. 22698 (PINK REGENCY TEACUP AND SAUCER) -> 22697 (GREEN REGENCY TEACUP AND SAUCER): support 0.0118, confidence 0.8657; 22697 (GREEN REGENCY TEACUP"
-H3Q19,answer,top_rules,top_rules,True,"10 rules found. 22523 (CHILDS GARDEN FORK PINK) -> 22521 (CHILDS GARDEN TROWEL PINK): support 0.0102, confidence 0.9309; 22746 (POPPY'S PLAYHOUSE LIVINGROOM ) -"
-H3Q20,answer,top_rules,top_rules,True,"10 rules found. 22523 (CHILDS GARDEN FORK PINK) -> 22521 (CHILDS GARDEN TROWEL PINK): support 0.0102, confidence 0.9309; 22746 (POPPY'S PLAYHOUSE LIVINGROOM ) -"
-H3Q21,trap,season_filter,,True,I cannot answer this from the rule tables.
-H3Q22,trap,season_filter,,True,I cannot answer this from the rule tables.
-H3Q23,trap,rules_for,rules_for,True,I cannot answer this from the rule tables.
-H3Q24,trap,season_filter,,True,I cannot answer this from the rule tables.
-H3Q25,trap,rules_for,,True,I cannot answer this from the rule tables.
-H3Q26,trap,season_filter,,True,I cannot answer this from the rule tables.
-H3Q27,trap,season_filter,,True,I cannot answer this from the rule tables.
-H3Q28,trap,season_filter,,True,I cannot answer this from the rule tables.
-H3Q29,trap,rules_for,rules_for,True,I cannot answer this from the rule tables.
-H3Q30,trap,rules_for,,True,I cannot answer this from the rule tables.
+id,kind,n_runs,expected_tools,actual_calls,passed,answer_preview
+Q01,answer,1,rules_for,"rules_for({""product"": ""SWEETHEART CERAMIC TRINKET BOX""})",True,"1 rules found. 21231 (SWEETHEART CERAMIC TRINKET BOX) -> 21232 (STRAWBERRY CERAMIC TRINKET BOX): support 0.0393, confidence 0.7965"
+Q02,answer,1,rules_for,"rules_for({""product"": ""RED HANGING HEART T-LIGHT HOLDER""})",True,"1 rules found. 21733 (RED HANGING HEART T-LIGHT HOLDER) -> 85123A (WHITE HANGING HEART T-LIGHT HOLDER): support 0.0377, confidence 0.7311"
+Q03,answer,1,rules_for,"rules_for({""product"": ""22423""})",True,"2 rules found. 22697 (GREEN REGENCY TEACUP AND SAUCER) -> 22423 (REGENCY CAKESTAND 3 TIER): support 0.0107, confidence 0.6235; 22699 (ROSES REGENCY TEACUP AND S"
+Q04,answer,1,top_rules,"top_rules({""min_support"": 0.01, ""min_confidence"": 0.85})",True,"5 rules found. 22523 (CHILDS GARDEN FORK PINK) -> 22521 (CHILDS GARDEN TROWEL PINK): support 0.0102, confidence 0.9309; 22746 (POPPY'S PLAYHOUSE LIVINGROOM ) ->"
+Q05,answer,1,top_rules,"top_rules({""min_support"": 0.01, ""min_confidence"": 0.03})",False,"10 rules found. 22523 (CHILDS GARDEN FORK PINK) -> 22521 (CHILDS GARDEN TROWEL PINK): support 0.0102, confidence 0.9309; 22746 (POPPY'S PLAYHOUSE LIVINGROOM ) -"
+Q06,answer,1,top_rules,"top_rules({""min_support"": 0.01, ""min_confidence"": 0.5})",True,"10 rules found. 22523 (CHILDS GARDEN FORK PINK) -> 22521 (CHILDS GARDEN TROWEL PINK): support 0.0102, confidence 0.9309; 22746 (POPPY'S PLAYHOUSE LIVINGROOM ) -"
+Q07,answer,1,rules_for,,False,I cannot answer this from the rule tables.
+Q08,answer,1,rules_for,"rules_for({""product"": ""HAND WARMER UNION JACK""})",True,"3 rules found. 22633 (HAND WARMER UNION JACK) -> 22865 (HAND WARMER OWL DESIGN): support 0.0104, confidence 0.5409; 22633 (HAND WARMER UNION JACK) -> 22632 (HAN"
+Q09,answer,1,rules_for,,False,I cannot answer this from the rule tables.
+Q10,answer,1,rules_for,,False,I cannot answer this from the rule tables.
+Q11,answer,1,rules_for,,False,I cannot answer this from the rule tables.
+Q12,answer,1,rules_for,,False,I cannot answer this from the rule tables.
+Q13,answer,1,rules_for,,False,I cannot answer this from the rule tables.
+Q14,answer,1,rules_for,,False,I cannot answer this from the rule tables.
+Q15,answer,1,rules_for,,False,I cannot answer this from the rule tables.
+Q16,answer,1,rules_for,,False,I cannot answer this from the rule tables.
+Q17,answer,1,rules_for,"rules_for({""product"": ""LUNCH BAG RED RETROSPOT""})",False,"4 rules found. 20726 (LUNCH BAG WOODLAND) -> 20725 (LUNCH BAG RED RETROSPOT): support 0.0255, confidence 0.5545; 22384 (LUNCH BAG PINK POLKADOT) -> 20725 (LUNCH"
+Q18,answer,1,rules_for,"rules_for({""product"": ""JUMBO BAG TOYS ""})",False,"1 rules found. 20711 (JUMBO BAG TOYS ) -> 85099B (JUMBO BAG RED RETROSPOT): support 0.0145, confidence 0.5396"
+Q19,answer,1,rules_for,"rules_for({""product"": ""CHARLIE + LOLA RED HOT WATER BOTTLE""})",False,"2 rules found. 84032B (CHARLIE + LOLA RED HOT WATER BOTTLE) -> 84032A (CHARLIE+LOLA PINK HOT WATER BOTTLE): support 0.0108, confidence 0.6156; 84032A (CHARLIE+L"
+Q20,answer,1,rules_for,"rules_for({""product"": ""PACK OF 72 RETROSPOT CAKE CASES""})",False,"8 rules found. 21976 (PACK OF 60 MUSHROOM CAKE CASES) -> 21212 (PACK OF 72 RETROSPOT CAKE CASES): support 0.0175, confidence 0.6212; 21975 (PACK OF 60 DINOSAUR "
+Q21,answer,1,rules_for;season_filter,"season_filter({""period"": ""peak""})",False,"315 rules found. 22747 (POPPY'S PLAYHOUSE BATHROOM) -> 22746 (POPPY'S PLAYHOUSE LIVINGROOM ): support 0.0169, confidence 0.9136; 22747 (POPPY'S PLAYHOUSE BATHRO"
+Q22,answer,1,season_filter,"season_filter({""period"": ""peak""})",True,"315 rules found. 22747 (POPPY'S PLAYHOUSE BATHROOM) -> 22746 (POPPY'S PLAYHOUSE LIVINGROOM ): support 0.0169, confidence 0.9136; 22747 (POPPY'S PLAYHOUSE BATHRO"
+Q23,answer,1,season_filter,"season_filter({""period"": ""peak""})",True,"315 rules found. 22747 (POPPY'S PLAYHOUSE BATHROOM) -> 22746 (POPPY'S PLAYHOUSE LIVINGROOM ): support 0.0169, confidence 0.9136; 22747 (POPPY'S PLAYHOUSE BATHRO"
+Q24,answer,1,season_filter,"season_filter({""period"": ""peak""})",True,"315 rules found. 22747 (POPPY'S PLAYHOUSE BATHROOM) -> 22746 (POPPY'S PLAYHOUSE LIVINGROOM ): support 0.0169, confidence 0.9136; 22747 (POPPY'S PLAYHOUSE BATHRO"
+Q25,trap,1,rules_for,,True,I cannot answer this from the rule tables.
+Q26,trap,1,rules_for,"rules_for({""product"": ""47000Q""})",True,I cannot answer this from the rule tables.
+Q27,trap,1,season_filter,,True,I cannot answer this from the rule tables.
+Q28,trap,1,season_filter,"season_filter({""period"": ""peak""})",False,"315 rules found. 22747 (POPPY'S PLAYHOUSE BATHROOM) -> 22746 (POPPY'S PLAYHOUSE LIVINGROOM ): support 0.0169, confidence 0.9136; 22747 (POPPY'S PLAYHOUSE BATHRO"
+Q29,trap,1,rules_for,,True,I cannot answer this from the rule tables.
+Q30,trap,1,rules_for,,True,I cannot answer this from the rule tables.

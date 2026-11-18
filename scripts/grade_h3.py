@@ -1,45 +1,81 @@
+"""Grade the H3 keyword-router baseline against the answer key (plan §3.4, auxiliary metric).
+
+    python scripts/grade_h3.py
+
+Reads tests/h3_questions.csv, tests/h3_answer_key.csv and results/h3_router_runs.jsonl
+(written by: python -m src.agent --router tests/h3_questions.csv --key tests/h3_answer_key.csv
+ --out results/h3_router_runs.jsonl), then writes results/h3_grading.csv.
+
+Grading: for each question, the router's recorded tool calls are replayed against the rule
+tables. An answer row passes when the replayed rule ids cover every expected rule id in the
+key. A trap row passes when the answer says the data cannot answer it.
+"""
 import csv
 import json
+import sys
+from collections import defaultdict
 from pathlib import Path
 
-questions = Path("tests/h3_questions.csv")
-key_path = Path("tests/h3_answer_key.csv")
-runs_path = Path("results/h3_router_runs_v2.jsonl")
-out_path = Path("results/h3_grading.csv")
+ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT))
 
-key = {}
-with key_path.open(encoding="utf-8", newline="") as f:
+from src import agent  # noqa: E402
+
+QUESTIONS = ROOT / "tests/h3_questions.csv"
+KEY = ROOT / "tests/h3_answer_key.csv"
+RUNS = ROOT / "results/h3_router_runs.jsonl"
+OUT = ROOT / "results/h3_grading.csv"
+
+NO_ANSWER = "I cannot answer this from the rule tables."
+
+key = defaultdict(list)
+with KEY.open(encoding="utf-8", newline="") as f:
     for row in csv.DictReader(f):
-        key[row["id"]] = row
+        key[row["id"]].append(row)
 
 answers = {}
-with runs_path.open(encoding="utf-8") as f:
+with RUNS.open(encoding="utf-8") as f:
     for line in f:
-        row = json.loads(line)
-        answers[row["question_id"]] = row
+        rec = json.loads(line)
+        answers.setdefault(rec["question_id"], []).append(rec)
 
-rows = []
-with questions.open(encoding="utf-8", newline="") as f:
+rows, misses = [], []
+with QUESTIONS.open(encoding="utf-8", newline="") as f:
     for q in csv.DictReader(f):
-        expected = key[q["id"]]
-        actual = answers.get(q["id"], {})
-        text = actual.get("answer", "")
-        has_rules = "I cannot answer this from the rule tables." not in text
-        passed = has_rules if expected["kind"] == "answer" else not has_rules
+        qid = q["id"]
+        runs = answers.get(qid, [])
+        expected = {rid for r in key[qid] for rid in r["rule_ids"].split(";") if rid}
+        kind = key[qid][0]["kind"]
+        tool_rows = []
+        got = set()
+        for rec in runs:
+            for call in rec.get("tool_calls", []):
+                tool_rows.append(f"{call['tool']}({json.dumps(call['args'], ensure_ascii=False)})")
+                try:
+                    got |= {x["rule_id"] for x in agent.TOOLS[call["tool"]](**call["args"])["rules"]}
+                except Exception as e:  # bad call from the router: no rules from it
+                    misses.append(f"{qid}: {call['tool']}(**{call['args']}) -> {e}")
+        if not runs:
+            misses.append(f"{qid}: no run recorded")
+        trapped = all(NO_ANSWER in rec.get("answer", NO_ANSWER) for rec in runs)
+        passed = (not trapped) and expected and expected <= got if kind == "answer" else trapped
         rows.append({
-            "id": q["id"],
-            "kind": expected["kind"],
-            "expected_tool": expected["tool"],
-            "actual_tools": ";".join(x["tool"] for x in actual.get("tool_calls", [])),
-            "passed": passed,
-            "answer_preview": text[:160].replace("\n", " "),
+            "id": qid,
+            "kind": kind,
+            "n_runs": len(runs),
+            "expected_tools": ";".join(sorted({r["tool"] for r in key[qid]})),
+            "actual_calls": ";".join(tool_rows[:3]),
+            "passed": bool(passed),
+            "answer_preview": (runs[0]["answer"][:160].replace("\n", " ") if runs else ""),
         })
 
-with out_path.open("w", encoding="utf-8", newline="") as f:
+with OUT.open("w", encoding="utf-8", newline="") as f:
     writer = csv.DictWriter(f, fieldnames=rows[0].keys())
     writer.writeheader()
     writer.writerows(rows)
 
-passed = sum(r["passed"] for r in rows)
-print(f"H3 router baseline: {passed}/{len(rows)} passed")
-print(f"Wrote {out_path}")
+n_pass = sum(r["passed"] for r in rows)
+print(f"H3 router baseline: {n_pass}/{len(rows)} passed ({n_pass / len(rows):.1%})")
+for m in misses:
+    print("warn:", m)
+print(f"Wrote {OUT}")

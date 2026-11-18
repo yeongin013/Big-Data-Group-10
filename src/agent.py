@@ -105,20 +105,45 @@ def top_rules(min_support=SUPPORT, min_confidence=CONF, limit=10):
     return res
 
 
-PEAK_ALIASES = ("peak", "christmas", "xmas", "holiday", "성수기", "크리스마스") + SEASON_MONTHS
+MONTHS = {"january": 1, "february": 2, "march": 3, "april": 4, "may": 5, "june": 6,
+          "july": 7, "august": 8, "september": 9, "october": 10, "november": 11, "december": 12}
+OFF_SEASON_WORDS = ("summer", "spring", "autumn", "fall", "easter", "여름", "봄", "가을", "부활절")
+PEAK_YEARS = (2009, 2010)
+PEAK_ALIASES = ("christmas", "xmas", "peak", "holiday", "season", "성수기", "크리스마스", "연말") + SEASON_MONTHS
+
+
+def _is_peak_period(p):
+    """Team decision (2026-11-17, reviews/change_requests.md): a period names the peak season
+    (Y1 months 2009-12 and 2010-11) when it is a peak phrase, or a month+year inside those
+    months, with the year limited to 2009/2010 for bare season phrases ("christmas 2010" -> yes,
+    "christmas 2011" -> no). Any other season or month/year ("summer season", "easter 2012",
+    "december 2010") is not in the data."""
+    words = [w for w in re.split(r"[\s,/]+", p) if w]
+    if not words or any(w in OFF_SEASON_WORDS for w in words):
+        return False
+    year = next((int(w) for w in words if re.fullmatch(r"(19|20)\d{2}", w)), None)
+    month = next((MONTHS[w] for w in words if w in MONTHS), None)
+    if month is not None:  # a specific month: must be one of the peak months in the right year
+        return (year is None and f"-{month:02d}" in " ".join(SEASON_MONTHS)) or \
+               (year is not None and f"{year}-{month:02d}" in SEASON_MONTHS)
+    if any(w in SEASON_MONTHS for w in words):  # literal "2009-12" / "2010-11"
+        return True
+    if any(w in PEAK_ALIASES for w in words):  # peak phrase; year, if any, must be a peak year
+        return year is None or year in PEAK_YEARS
+    return False
 
 
 def season_filter(period):
     """Peak-season rules (Y1 baskets in 2009-12 and 2010-11). Other periods are not in the data -> empty.
 
-    Strict period parsing: the whole period string must name the peak season (an alias or
-    one of its months). Anything with another year, month or season word (e.g. "easter 2012",
-    "christmas 2012", "november 2010") is not in the data and returns no rules.
+    Accepts peak phrases ("christmas season", "peak", "연말 성수기"), the peak months
+    ("2009-12", "december 2009", "november 2010") and season+peak-year phrases
+    ("Christmas 2010"). Everything else (other years, other seasons, other months)
+    returns no rules.
     """
     _, season = tables()
     p = str(period).strip().lower()
-    words = set(re.split(r"[\s,/]+", p))
-    if words and words <= set(PEAK_ALIASES):
+    if _is_peak_period(p):
         return _result(season, period=period, table="peak season (2009-12 and 2010-11)")
     return {"period": period, "n_rules": 0, "rules": [],
             "message": f"Unknown period. Only the peak season ({', '.join(SEASON_MONTHS)}) is available."}

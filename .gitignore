@@ -13,3 +13,10 @@ __pycache__/
 
 # macOS
 .DS_Store
+
+# H3 local files
+tests/h3_questions.csv
+tests/h3_answer_key*.csv
+results/h3_*.jsonl
+results/h3_grading.csv
+scripts/grade_h3.py

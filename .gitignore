@@ -14,9 +14,8 @@ __pycache__/
 # macOS
 .DS_Store
 
-# H3 local files
+# H3 local files (grade_h3.py itself is tracked; it reads/writes outside the repo)
 tests/h3_questions.csv
 tests/h3_answer_key*.csv
 results/h3_*.jsonl
 results/h3_grading.csv
-scripts/grade_h3.py

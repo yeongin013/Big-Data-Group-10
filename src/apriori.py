@@ -1,6 +1,7 @@
 """A-Priori for pairs (MMDS §6.2.5) with a triangular array (§6.2.2), plus rule generation."""
 import math
 from collections import Counter
+from functools import lru_cache
 from itertools import combinations
 
 import numpy as np
@@ -12,38 +13,64 @@ def min_count(n, s):
     return math.ceil(round(s * n, 9))
 
 
+@lru_cache(maxsize=32)
+def _small_pair_indices(size):
+    return np.triu_indices(size, 1)
+
+
+def pair_indices(size):
+    return _small_pair_indices(size) if size <= 64 else np.triu_indices(size, 1)
+
+
 def run(baskets, threshold):
     """baskets: iterable of sorted tuples of item codes. threshold: absolute count.
 
     Returns dict with item_counts (all items), frequent (sorted list), pairs {(a, b): count} for frequent pairs (a < b),
-    n_candidates (pairs of frequent items, C(m, 2)), n_occurring (candidate pairs seen at least once) and memory_bytes
-    (4 bytes per triangular-array cell)."""
+    n_candidates (observed pairs), n_candidates_all (C(m, 2)) and triangle storage in bytes."""
     baskets = list(baskets)
     item_counts = Counter(i for t in baskets for i in t)  # pass 1
     frequent = sorted(i for i, c in item_counts.items() if c >= threshold)
     idx = {item: k for k, item in enumerate(frequent)}
     m = len(frequent)
     # pass 2: triangular array, cell for i < j is i*(2m-i-1)/2 + (j-i-1)
-    cells = []
+    starts = _row_starts(m)
+    capacity = m * (m - 1) // 2
+    dtype = np.uint32 if len(baskets) <= np.iinfo(np.uint32).max else np.uint64
+    tri = np.zeros(capacity, dtype=dtype)
     for t in baskets:
-        f = [idx[i] for i in t if i in idx]  # t sorted, so f sorted
-        cells.extend(i * (2 * m - i - 1) // 2 + (j - i - 1) for i, j in combinations(f, 2))
-    tri = np.bincount(np.asarray(cells, dtype=np.int64), minlength=m * (m - 1) // 2)
-    pairs = {}
-    for k in np.flatnonzero(tri >= threshold):
-        i = int(np.searchsorted(_row_starts(m), k, side="right") - 1)
-        j = int(k - _row_starts(m)[i] + i + 1)
-        pairs[(frequent[i], frequent[j])] = int(tri[k])
+        f = np.array([idx[i] for i in t if i in idx], dtype=np.int64)
+        a, b = pair_indices(len(f))
+        i, j = f[a], f[b]
+        # Each pair has a unique cell within a sorted, deduplicated basket.
+        tri[starts[i] + j - i - 1] += 1
+    kept = np.flatnonzero((tri > 0) & (tri >= threshold))
+    i = np.searchsorted(starts, kept, side="right") - 1
+    j = kept - starts[i] + i + 1
+    pairs = {(frequent[a], frequent[b]): int(tri[k]) for a, b, k in zip(i, j, kept)}
+    observed = int(np.count_nonzero(tri))
     return {"item_counts": item_counts, "frequent": frequent, "pairs": pairs,
-            "n_candidates": m * (m - 1) // 2, "n_occurring": int(np.count_nonzero(tri)),
-            "memory_bytes": 4 * (m * (m - 1) // 2)}
+            "n_candidates": observed, "n_candidates_all": capacity, "n_occurring": observed,
+            "memory_bytes": tri.nbytes}
 
 
-def _row_starts(m, _cache={}):
-    if m not in _cache:
-        i = np.arange(m, dtype=np.int64)
-        _cache[m] = i * (2 * m - i - 1) // 2
-    return _cache[m]
+def _row_starts(m):
+    i = np.arange(m, dtype=np.int64)
+    return i * (2 * m - i - 1) // 2
+
+
+def count_frequent_triples(baskets, frequent_pairs, threshold):
+    """Join frequent pairs with the same first item, then count surviving triples."""
+    suffixes = {}
+    for a, b in sorted(frequent_pairs):
+        suffixes.setdefault(a, []).append(b)
+    candidates = {(a, b, c) for a, neighbors in suffixes.items()
+                  for b, c in combinations(neighbors, 2) if (b, c) in frequent_pairs}
+    relevant = {item for triple in candidates for item in triple}
+    counts = Counter()
+    for basket in baskets:
+        items = [item for item in basket if item in relevant]
+        counts.update(triple for triple in combinations(items, 3) if triple in candidates)
+    return sum(count >= threshold for count in counts.values())
 
 
 def rules(pairs, item_counts, n, min_conf=0.5):

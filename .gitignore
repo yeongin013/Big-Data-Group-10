@@ -2,14 +2,14 @@
 주제선정.md
 
 # Data (not redistributed)
-data/
+data
 
 # Secrets
 .env
 
 # Python
 __pycache__/
-.venv/
+.venv
 
 # macOS
 .DS_Store

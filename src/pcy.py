@@ -23,6 +23,18 @@ def _pairs(ids):
     return ids[a], ids[b]
 
 
+def _encode_baskets(baskets, idx):
+    return [np.array([idx[item] for item in basket], dtype=np.int64) for basket in baskets]
+
+
+def _count_buckets(ids, n_buckets):
+    counts = np.zeros(n_buckets, dtype=np.int64)
+    for start in range(0, len(ids), 1000):
+        hashes = [bucket(*_pairs(basket), n_buckets) for basket in ids[start:start + 1000]]
+        counts += np.bincount(np.concatenate(hashes), minlength=n_buckets)
+    return counts
+
+
 def run(baskets, threshold, n_buckets):
     """baskets: iterable of sorted tuples of item codes. threshold: absolute count. n_buckets: number of hash buckets.
 
@@ -30,16 +42,13 @@ def run(baskets, threshold, n_buckets):
     and textbook memory per pass."""
     baskets = list(baskets)
     # item ids: sort codes, so i < j iff code_i < code_j (baskets are sorted tuples, so id arrays come out sorted)
-    codes = sorted({i for t in baskets for i in t})
+    item_counts = Counter(i for t in baskets for i in t)
+    codes = sorted(item_counts)
     idx = {c: k for k, c in enumerate(codes)}
-    ids = [np.array([idx[i] for i in t], dtype=np.int64) for t in baskets]
+    ids = _encode_baskets(baskets, idx)
 
     # pass 1: count items, and hash every pair of every basket into a bucket count (§6.3.1)
-    item_counts = Counter(i for t in baskets for i in t)
-    bucket_counts = np.zeros(n_buckets, dtype=np.int64)
-    for s in range(0, len(ids), 1000):  # ponytail: chunks of 1000 baskets keep the hash arrays small
-        h = [bucket(*_pairs(x), n_buckets) for x in ids[s:s + 1000]]
-        bucket_counts += np.bincount(np.concatenate(h), minlength=n_buckets)
+    bucket_counts = _count_buckets(ids, n_buckets)
 
     # Pack one bit per bucket. Keep counts for the hash diagnostic returned by run().
     frequent = sorted(i for i, c in item_counts.items() if c >= threshold)

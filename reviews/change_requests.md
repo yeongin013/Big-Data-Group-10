@@ -16,7 +16,7 @@
 | 브랜치 | 판정 | 남은 것 |
 |---|---|---|
 | `Hyeonseop` | 병합 가능 | 4는 일부 반영(PR 설명에 시간 기록 없음), 6은 일부 반영(MMDS Example 6.1 대조 없음) |
-| `goeun` | 병합 가능 | 5는 일부 반영(T6은 아직 구현 전), 6은 일부 반영(계정 요금제 미확인), low 라우터 confidence·support 혼동 일부 남음 |
+| `goeun` | 병합 가능 | 5는 일부 반영(T6은 아직 구현 전), low 라우터 confidence·support 혼동 일부 남음 |
 | `yuchan-final` | 보류 | 3(H3 파일 5개) 미반영, 6의 CPU 이름 미반영 |
 
 - 세 브랜치 모두 테스트가 통과한다. `main`과도, 브랜치끼리도 충돌이 없다.
@@ -29,7 +29,7 @@
 
 ## 11/20 점검 결과
 
-`Hyeonseop`(f3c8216)에는 11/17 이후 새 커밋이 없다. PR #1은 열려 있다. `goeun`에는 29e3d29(11/17) 한 건이 올라왔다. `reviews/upstage_terms_check.md`에 Upstage 무료 Welcome 쿠폰 크레딧만 있고 결제수단이 없다고 적었다. `yuchan-final`에는 11/18~19에 네 건이 올라왔다: 48858c8(H3 질문 SHA-256), 981f87e(정답지 확정, `season_filter`, 라우터 기준선·채점 재생성), b2fc9ad(11/17 `season_filter` 결정 반영), 6b860e0(옛 정답지 초안, CPU 이름). 이번 점검은 git만으로 했고, 테스트는 실행하지 않았다.
+`Hyeonseop`(f3c8216)에는 11/17 이후 새 커밋이 없다. PR #1은 열려 있다. `goeun`에는 29e3d29(11/17) 한 건이 올라왔다. `yuchan-final`에는 11/18~19에 네 건이 올라왔다: 48858c8(H3 질문 SHA-256), 981f87e(정답지 확정, `season_filter`, 라우터 기준선·채점 재생성), b2fc9ad(11/17 `season_filter` 결정 반영), 6b860e0(옛 정답지 초안, CPU 이름). 이번 점검은 git만으로 했고, 테스트는 실행하지 않았다.
 
 | 브랜치 | 판정 | 남은 것 |
 |---|---|---|
@@ -59,6 +59,29 @@
 6. AI 도구 규칙: `CLAUDE.md`와 `AGENTS.md`에 "`tests/h3_*`, `results/h3_*`와 레포 밖 H3 폴더는 읽지 않는다"를 적는다.
 7. 보고서 한계 절에 질문이 공개 브랜치에 있던 기간, 채점한 에이전트 커밋, 평가자가 질문을 알고 `season_filter`를 고쳤다는 점을 적는다.
 
+## 11/23 점검 결과
+
+새 커밋: `yuchan-final`은 a2a4125(11/22)까지 다섯 건(465fff8, 2a64e44, d09e78c, 6811d53, a2a4125), `Hyeonseop`은 f33392e(11/22) 한 건이다. `goeun`(29e3d29)과 `main`은 그대로다. `agent-v1` 태그는 아직 없다.
+
+| 브랜치 | 판정 | 남은 것 |
+|---|---|---|
+| `Hyeonseop` | 병합 가능 | 없음 |
+| `goeun` | 병합 가능 | 없음 |
+| `yuchan-final` | 병합 가능 | 2, 10 (병합 뒤 기준 PC에서 재실행) |
+
+- `yuchan-final`: 요청 11, 12, 13을 반영했다. 최신 커밋에 H3 질문·정답지·채점 결과 파일이 없다. `.gitignore`에 `tests/h3_questions.csv`, `tests/h3_answer_key*.csv`, `results/h3_*.jsonl`, `results/h3_grading.csv`가 들어갔다. `scripts/grade_h3.py`는 인자 > 환경변수 > 레포 밖 기본 폴더 순서로 경로를 정하고, 결과도 레포 밖에 쓴다. `main`과 `goeun`을 자기 브랜치에 합쳐 `src/agent.py` 충돌을 풀었다. 새 `tests/test_agent_tools.py`에는 H3 질문과 겹치는 표현이 없다.
+- `yuchan-final` 6811d53이 `season_filter`의 비수기 단어에 "winter", "겨울"을 더했다. 질문이 공개된 뒤 평가자가 바꾼 것이다. H3는 `agent-v1`(`goeun` 29e3d29)로 채점하므로 점수에는 영향이 없다. 보고서 한계 절(11/20 결정 7)에 같이 적는다.
+- `Hyeonseop` f33392e("Solar 실행 선택용 집계 함수 추가"): 수정안의 알고리즘 담당 첫 산출물이다. `src/mining_job.py`의 `MiningJob`에 `profile()`(1차 통계와 설정별 메모리 추정), `pilot()`(표본 시험 집계), `validate_setting()`(예산 검사), `run()`(전체 집계)이 있다. `src/pcy.py`의 1차 패스를 `_encode_baskets`, `_count_buckets`로 나눴고, 결과는 그대로다. 설명은 `plan/solar_mining_tools.md`, 테스트는 `tests/test_mining_job.py`다.
+- 시험 병합: 임시 worktree에서 `main`에 `Hyeonseop` → `goeun` → `yuchan-final`을 합쳤다. 충돌이 없다. 테스트 모듈 9개(`test_textbook`, `test_pcy_hash`, `test_evaluate`, `test_answer_key`, `test_answer_check`, `test_api`, `test_agent_tools`, `test_role2_integration`, `test_mining_job`)가 모두 통과한다.
+- 병합본 `season_filter`: "Christmas 2010" 315개, "christmas season" 315개, "december 2010" 0개, "winter 2010" 0개, "summer 2011" 0개. 11/17 결정과 같다.
+- 병합본 `MiningJob`으로 Y1, support 1%를 돌렸다. 빈발 상품 713, 세 설정 모두 빈발 쌍 585, 관측 후보 Apriori 252,748, PCY 작은 버킷 243,918, PCY 큰 버킷 1,238. 기준 수치가 유지된다.
+
+수정안 보완점과 이어지는 관찰 (기준 PC, 1회 측정):
+
+- `profile()`이 0.39초 걸린다. 1년 차 전체 집계와 비슷한 크기라, 지금 규모에서는 통계를 만드는 비용만으로 선택의 이득을 넘을 수 있다 (보완점 B).
+- 예산 64 MiB에서는 세 설정이 모두 통과하고, 모델 메모리는 Apriori가 가장 작다(1,015,312 B, PCY 작은 버킷 3,054,127 B, PCY 큰 버킷 4,194,292 B). 이 입력에서는 메모리 기준 규칙 기반 선택이 늘 Apriori를 고른다. 예산을 1~4 MB 사이로 줄여야 선택이 갈린다 (보완점 A).
+- `pilot()` 기본값(장바구니 1,000개, 기준 10건)은 0.02초에 끝나지만, 빈발 쌍이 1,060개로 전체의 585개와 크게 다르다. 표본 결과는 시간 추정용으로만 쓰고, 개수는 Solar에 "표본 기준"으로 표시해 보낸다.
+
 ## 수정안 검토 (11/20)
 
 대상: `Basket Insight Agent 프로젝트 수정안.docx` (레포 밖).
@@ -73,14 +96,13 @@
 - [ ] B. 큰 입력을 만드는 방법을 정한다(표본 추출, 장바구니 복제, 2년치 전체). 1년 차 집계는 1.5초 안에 끝나서, 지금 규모에서는 Solar 호출 시간이 집계 절감보다 클 가능성이 크다.
 - [ ] C. 시간 전제는 기준 PC 값으로 쓴다. 지지도 1%에서 Windows(PR #1)는 Apriori가 빨랐다. `Hyeonseop` 브랜치의 Mac `results/timings.csv`는 PCY 큰 버킷이 빨랐다(0.288초 대 0.561초). 11/17 측정은 다시 Apriori가 빨랐다.
 - [ ] D. "실제 최대 메모리" 측정 방법을 정한다. `tracemalloc`은 프로세스 전체 메모리가 아니다. `resource`는 Windows에 없으므로, 팀원 Windows 기기에서 재려면 `psutil`이 필요하다. 강제 한도는 OS마다 방법이 달라 문서대로 나중에 따로 검증한다.
-- [ ] E. Solar 무료 크레딧으로 실험 횟수 × 방식 3개 × 추가 호출 수를 감당할 수 있는지 계산한다. Solar에는 통계만 보내므로 고객 정보 미전송 조건은 지켜진다.
-- [ ] F. 범위: 동결된 `plan_v0.6`에 없는 새 연구 질문이다. H1–H3는 그대로 두고, 이 질문은 확장(H4 또는 부록)으로 분리한다. H3 채점에 쓰는 기존 규칙 조회 도구는 남긴다. 12/8까지 약 18일이므로 첫 목표(작업 한 건 끝내기)부터 한다.
+- [ ] E. 범위: 동결된 `plan_v0.6`에 없는 새 연구 질문이다. H1–H3는 그대로 두고, 이 질문은 확장(H4 또는 부록)으로 분리한다. H3 채점에 쓰는 기존 규칙 조회 도구는 남긴다. 12/8까지 약 18일이므로 첫 목표(작업 한 건 끝내기)부터 한다.
 
 담당별 할 일 (수정안의 분담 기준):
 
 | 담당 | 할 일 |
 |---|---|
-| 공통 | A, B, E 결정 |
+| 공통 | A, B 결정 |
 | 이현섭 | 1차 통계와 시험 집계 도구, 설정·메모리 추정 검증, 고정 방식과 결과 일치 확인 |
 | 유찬 | 세 방식 비교표(시간, 메모리, 실패 원인), 요청 11, 12, 13 |
 | 최영인 | 평가 데이터와 재현 명령, SQLite 대기열·작업 스레드·집계 프로세스 연결, C, D |
@@ -110,7 +132,7 @@
 - [x] 3. `top_rules` 도구 안에서 limit을 1~500으로 제한한다. 지금은 API에서만 막아서, Solar가 도구를 직접 부르면 막히지 않는다.
 - [x] 4. `--eval`은 `--key`를 필수로 받는다. 질문 파일 SHA, 실행 ID, HTTP 재시도를 기록한다 (1차 리뷰 #9).
 - [ ] 5. `--ping` 도움말과 docstring을 실제 동작(`agent_runs.jsonl`, `tool_choice: "auto"`)에 맞춘다. T6과 채점에서는 `method == "ping"`인 행을 건너뛴다.
-- [ ] 6. `plan/upstage_terms_check.md`에 11/11 ping 결과와 계정 요금제를 적고 `reviews/`로 옮긴다. 지금 문서의 "실제 API 접속은 아직 수행하지 않았다"는 같은 브랜치의 ping 기록과 모순된다.
+- [x] 6. `plan/upstage_terms_check.md`에 11/11 ping 결과를 적고 `reviews/`로 옮긴다. 지금 문서의 "실제 API 접속은 아직 수행하지 않았다"는 같은 브랜치의 ping 기록과 모순된다. (29e3d29: `reviews/upstage_terms_check.md`에 11/11 접속 시험 기록)
 - [x] 7. `src/api.py`
   - POST는 `application/json`만 받는다
   - Host가 127.0.0.1이나 localhost가 아니면 403을 낸다
@@ -128,13 +150,13 @@ H3 질문과 정답지는 `agent-v1` 태그 전까지 에이전트 담당에게 
 
 - [x] 1. `src/evaluate.py:197-198`의 `seed=` 인자를 지워 bootstrap seed를 0으로 되돌린다 (계획 §3.2).
 - [ ] 2. `results/`의 `null_check.csv`, `t5_sensitivity.csv`, `timings.csv`를 `main` 버전으로 되돌린다. 다시 재는 것은 알고리즘 브랜치를 병합한 뒤 기준 PC(최영인의 Mac)에서 한다.
-- [ ] 3. H3 파일 5개를 PR에서 뺀다: `tests/h3_questions.csv`, `tests/h3_answer_key.csv`, `results/h3_grading.csv`, `results/h3_router_runs_v2.jsonl`, `scripts/grade_h3.py`. 히스토리는 그대로 둔다.
+- [x] 3. H3 파일 5개를 PR에서 뺀다: `tests/h3_questions.csv`, `tests/h3_answer_key.csv`, `results/h3_grading.csv`, `results/h3_router_runs_v2.jsonl`, `scripts/grade_h3.py`. 히스토리는 그대로 둔다. (11/20 요청 11로 대체, 11/23 반영 확인)
 - [x] 4. T5 bootstrap을 100회에서 1,000회로 바꾼다 (계획 §6, 1차 리뷰 #8).
 - [x] 5. `tests/test_evaluate.py`에 `_split` off-by-one, `_ci`, `top5_filter`, `drop_top1pct`, `merge_same_day`, changed 플래그 테스트를 넣는다 (1차 리뷰 #7).
 - [x] 6. T3에 상품 support 최댓값(0.162)을 넣는다. `timings.csv`의 CPU를 "arm" 대신 실제 모델명으로 적는다.
 - [x] 7. `run_all.py` T6: `agent_runs.jsonl`과 `h3_grades.csv`가 둘 다 있으면 `NotImplementedError`로 멈추지 말고 경고만 낸다.
 - [x] 8. 새 H3 질문 초안을 검토한다. 파일은 레포 밖에 있고, 최영인이 따로 공유한다. 11/17에 질문 파일 SHA-256을 커밋한다.
-- [ ] 선택. 새 입력 검사를 확인하는 테스트를 1~2개 넣는다.
+- [x] 선택. 새 입력 검사를 확인하는 테스트를 1~2개 넣는다. (a2a4125 `tests/test_agent_tools.py`)
 
 ### 11/14 커밋 `dcd8756` 검토 ("Submit weekly T3 and T5 results")
 
@@ -154,9 +176,9 @@ H3 질문과 정답지는 `agent-v1` 태그 전까지 에이전트 담당에게 
 
 11/20 추가 요청:
 
-- [ ] 11. H3 파일 4개(`tests/h3_questions.csv`, `tests/h3_answer_key.csv`, `results/h3_grading.csv`, `results/h3_router_runs.jsonl`)를 `agent-v1` 태그 전까지 브랜치에 두지 않는다. 방법은 최영인과 따로 정한다.
-- [ ] 12. `goeun`을 합친 상태에서 `src/agent.py` 충돌을 풀 수 있게, `main`과 `goeun`을 받아 `season_filter` 변경을 다시 맞춘다.
-- [ ] 13. `scripts/grade_h3.py`가 질문·정답지 경로를 인자나 환경변수로 받게 하고, 기본값을 레포 밖 폴더로 둔다. 채점 결과도 레포 밖에 쓴다.
+- [x] 11. H3 파일 4개(`tests/h3_questions.csv`, `tests/h3_answer_key.csv`, `results/h3_grading.csv`, `results/h3_router_runs.jsonl`)를 `agent-v1` 태그 전까지 브랜치에 두지 않는다. 방법은 최영인과 따로 정한다.
+- [x] 12. `goeun`을 합친 상태에서 `src/agent.py` 충돌을 풀 수 있게, `main`과 `goeun`을 받아 `season_filter` 변경을 다시 맞춘다.
+- [x] 13. `scripts/grade_h3.py`가 질문·정답지 경로를 인자나 환경변수로 받게 하고, 기본값을 레포 밖 폴더로 둔다. 채점 결과도 레포 밖에 쓴다.
 
 ## 최영인 (데이터·재현)
 

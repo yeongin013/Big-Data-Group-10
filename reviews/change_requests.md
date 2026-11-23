@@ -133,7 +133,7 @@
 - [x] 3. `top_rules` 도구 안에서 limit을 1~500으로 제한한다. 지금은 API에서만 막아서, Solar가 도구를 직접 부르면 막히지 않는다.
 - [x] 4. `--eval`은 `--key`를 필수로 받는다. 질문 파일 SHA, 실행 ID, HTTP 재시도를 기록한다 (1차 리뷰 #9).
 - [ ] 5. `--ping` 도움말과 docstring을 실제 동작(`agent_runs.jsonl`, `tool_choice: "auto"`)에 맞춘다. T6과 채점에서는 `method == "ping"`인 행을 건너뛴다.
-- [ ] 6. `plan/upstage_terms_check.md`에 11/11 ping 결과와 계정 요금제를 적고 `reviews/`로 옮긴다. 지금 문서의 "실제 API 접속은 아직 수행하지 않았다"는 같은 브랜치의 ping 기록과 모순된다.
+- [x] 6. `plan/upstage_terms_check.md`에 11/11 ping 결과와 계정 요금제를 적고 `reviews/`로 옮긴다. 지금 문서의 "실제 API 접속은 아직 수행하지 않았다"는 같은 브랜치의 ping 기록과 모순된다. (29e3d29: `reviews/upstage_terms_check.md`에 11/11 접속 시험과 11/17 무료 크레딧 상태 기록)
 - [x] 7. `src/api.py`
   - POST는 `application/json`만 받는다
   - Host가 127.0.0.1이나 localhost가 아니면 403을 낸다
@@ -151,13 +151,13 @@ H3 질문과 정답지는 `agent-v1` 태그 전까지 에이전트 담당에게 
 
 - [x] 1. `src/evaluate.py:197-198`의 `seed=` 인자를 지워 bootstrap seed를 0으로 되돌린다 (계획 §3.2).
 - [ ] 2. `results/`의 `null_check.csv`, `t5_sensitivity.csv`, `timings.csv`를 `main` 버전으로 되돌린다. 다시 재는 것은 알고리즘 브랜치를 병합한 뒤 기준 PC(최영인의 Mac)에서 한다.
-- [ ] 3. H3 파일 5개를 PR에서 뺀다: `tests/h3_questions.csv`, `tests/h3_answer_key.csv`, `results/h3_grading.csv`, `results/h3_router_runs_v2.jsonl`, `scripts/grade_h3.py`. 히스토리는 그대로 둔다.
+- [x] 3. H3 파일 5개를 PR에서 뺀다: `tests/h3_questions.csv`, `tests/h3_answer_key.csv`, `results/h3_grading.csv`, `results/h3_router_runs_v2.jsonl`, `scripts/grade_h3.py`. 히스토리는 그대로 둔다. (11/20 요청 11로 대체, 11/23 반영 확인)
 - [x] 4. T5 bootstrap을 100회에서 1,000회로 바꾼다 (계획 §6, 1차 리뷰 #8).
 - [x] 5. `tests/test_evaluate.py`에 `_split` off-by-one, `_ci`, `top5_filter`, `drop_top1pct`, `merge_same_day`, changed 플래그 테스트를 넣는다 (1차 리뷰 #7).
 - [x] 6. T3에 상품 support 최댓값(0.162)을 넣는다. `timings.csv`의 CPU를 "arm" 대신 실제 모델명으로 적는다.
 - [x] 7. `run_all.py` T6: `agent_runs.jsonl`과 `h3_grades.csv`가 둘 다 있으면 `NotImplementedError`로 멈추지 말고 경고만 낸다.
 - [x] 8. 새 H3 질문 초안을 검토한다. 파일은 레포 밖에 있고, 최영인이 따로 공유한다. 11/17에 질문 파일 SHA-256을 커밋한다.
-- [ ] 선택. 새 입력 검사를 확인하는 테스트를 1~2개 넣는다.
+- [x] 선택. 새 입력 검사를 확인하는 테스트를 1~2개 넣는다. (a2a4125 `tests/test_agent_tools.py`)
 
 ### 11/14 커밋 `dcd8756` 검토 ("Submit weekly T3 and T5 results")
 

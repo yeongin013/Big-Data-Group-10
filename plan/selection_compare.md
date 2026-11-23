@@ -22,8 +22,6 @@
   `pcy_small`(65,521 버킷), `pcy_large`(1,048,573 버킷)이다.
 - Solar 오류, 시간 초과, 잘못된 선택이 이어지면 규칙 기반 설정으로 넘어간다
   (`selected` 이벤트의 `source`가 `rules_fallback`). 예산 안에 드는 설정이 없으면 실패한다.
-- 참고 행 `fixed_*`는 선택 없이 설정 하나를 고정해 돌린다. 비교 대상은 아니고, 설정마다
-  집계 시간의 기준이 된다. 그 예산에서 후보인 설정만 돌린다.
 
 ## 2. 조건 (행)
 
@@ -33,8 +31,8 @@
 |---|---|
 | `dataset` (입력) | I0: 1년 차 전체. I1: 큰 입력. 만드는 방법은 B에서 정한다(표본 추출, 장바구니 복제, 2년치 전체) |
 | `support` | 0.01 |
-| `memory_budget_bytes` (예산) | 아래 세 수준 |
-| `repeat` | 시간·메모리는 5회, Solar 선택은 3회(제안. 정해지면 고친다) |
+| `memory_budget_bytes` (예산) | 아래 두 수준 |
+| `repeat` | 횟수는 아직 정하지 않았다. 정해지면 적는다 |
 
 11/23 측정(기준 PC)에서 I0의 모델 메모리 추정치는 Apriori 1,015,312 B, `pcy_small`
 3,054,127 B, `pcy_large` 4,194,292 B다. 예산은 이 세 값 사이에서 정한다.
@@ -43,7 +41,6 @@
 |---|---|---|---|
 | B0 | 4,194,292 B 이상(11/23 측정은 64 MiB) | 셋 | 세 설정 중에서 고르는 차이 |
 | B1 | 3,054,127 B 이상 4,194,292 B 미만 | 둘(`apriori`, `pcy_small`) | 예산이 `pcy_large`를 가려낼 때의 차이 |
-| B2 | 1,015,312 B 미만 | 없음 | 전부 실패로 끝나는지 |
 
 후보가 하나뿐인 예산(1,015,312 B 이상 3,054,127 B 미만)에서는 세 방식이 같은 설정을
 고르므로 시간 차이만 남는다.
@@ -55,7 +52,7 @@
 | `selected` | 고른 설정 | `selected` 이벤트의 `setting` |
 | `source` | 누가 골랐는가 | `selected` 이벤트의 `source`(`rules`, `solar`, `rules_fallback`) |
 | `pairs_ok` | 빈발 쌍이 기준 결과와 같은가 | `run(selected)`의 빈발 쌍과 빈도가 세 설정 공통 결과와 같은지 |
-| `best_ok` | 최선 선택인가 | 예산을 통과한 설정 중 집계 시간이 가장 짧은 것을 골랐는지 |
+| `best_ok` | 최선 선택인가 | 예산을 통과한 설정 중 집계 시간이 가장 짧은 것을 골랐는지. 설정별 시간은 T2(`timings.csv`)로 잰다 |
 | `t_profile_s` | 통계 시간 | `profile()` |
 | `t_pilot_s` | 표본 집계 시간 | `pilot` 이벤트 `result`의 `elapsed_s`. 없으면 0 |
 | `t_select_s` | Solar 선택 시간 | `selected`, `fallback` 이벤트의 `selection_seconds`. 표본 집계 시간을 포함한다 |
@@ -93,7 +90,7 @@
 
 요약표는 입력 × 예산마다 한 장씩이다. 아래는 I0 × B0의 틀이고, 칸은 실험 뒤 채운다.
 
-| 행 | `selected`(3회) | `source` | `pairs_ok` | `best_ok` | `failures` |
+| 행 | `selected`(반복별) | `source` | `pairs_ok` | `best_ok` | `failures` |
 |---|---|---|---|---|---|
 | `rules` | | | | | |
 | `solar_once` | | | | | |
@@ -104,9 +101,6 @@
 | `rules` | | | | | | | | | |
 | `solar_once` | | | | | | | | | |
 | `solar_pilot` | | | | | | | | | |
-| `fixed_apriori` | 0 | 0 | 0 | | | | | 0 | 0 |
-| `fixed_pcy_small` | 0 | 0 | 0 | | | | | 0 | 0 |
-| `fixed_pcy_large` | 0 | 0 | 0 | | | | | 0 | 0 |
 
 ## 6. 정해지면 채울 것
 
@@ -116,7 +110,7 @@
 | B 큰 입력 만드는 방법 | `dataset` I1 행 | 공통. 11/23 측정에서 `profile()`이 0.39초라, I0에서는 선택 비용이 집계 절감보다 클 수 있다 |
 | C 시간의 기준 PC | 시간 열 | 담당은 `reviews/change_requests.md`의 담당별 할 일표를 따른다 |
 | D 실제 최대 메모리 측정법 | `mem_peak_bytes` | 같은 표. `tracemalloc`은 프로세스 전체 메모리가 아니다 |
-| 반복 수 | `repeat` | 제안: 시간·메모리 5회, Solar 선택 3회 |
+| 반복 수 | `repeat` | 아직 정하지 않았다 |
 
 채우기 전에 먼저 필요한 것:
 

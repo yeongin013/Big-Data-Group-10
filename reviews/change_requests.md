@@ -59,6 +59,29 @@
 6. AI 도구 규칙: `CLAUDE.md`와 `AGENTS.md`에 "`tests/h3_*`, `results/h3_*`와 레포 밖 H3 폴더는 읽지 않는다"를 적는다.
 7. 보고서 한계 절에 질문이 공개 브랜치에 있던 기간, 채점한 에이전트 커밋, 평가자가 질문을 알고 `season_filter`를 고쳤다는 점을 적는다.
 
+## 11/23 점검 결과
+
+새 커밋: `yuchan-final`은 a2a4125(11/22)까지 다섯 건(465fff8, 2a64e44, d09e78c, 6811d53, a2a4125), `Hyeonseop`은 f33392e(11/22) 한 건이다. `goeun`(29e3d29)과 `main`은 그대로다. `agent-v1` 태그는 아직 없다.
+
+| 브랜치 | 판정 | 남은 것 |
+|---|---|---|
+| `Hyeonseop` | 병합 가능 | 없음 |
+| `goeun` | 병합 가능 | 없음 |
+| `yuchan-final` | 병합 가능 | 2, 10 (병합 뒤 기준 PC에서 재실행) |
+
+- `yuchan-final`: 요청 11, 12, 13을 반영했다. 최신 커밋에 H3 질문·정답지·채점 결과 파일이 없다. `.gitignore`에 `tests/h3_questions.csv`, `tests/h3_answer_key*.csv`, `results/h3_*.jsonl`, `results/h3_grading.csv`가 들어갔다. `scripts/grade_h3.py`는 인자 > 환경변수 > 레포 밖 기본 폴더 순서로 경로를 정하고, 결과도 레포 밖에 쓴다. `main`과 `goeun`을 자기 브랜치에 합쳐 `src/agent.py` 충돌을 풀었다. 새 `tests/test_agent_tools.py`에는 H3 질문과 겹치는 표현이 없다.
+- `yuchan-final` 6811d53이 `season_filter`의 비수기 단어에 "winter", "겨울"을 더했다. 질문이 공개된 뒤 평가자가 바꾼 것이다. H3는 `agent-v1`(`goeun` 29e3d29)로 채점하므로 점수에는 영향이 없다. 보고서 한계 절(11/20 결정 7)에 같이 적는다.
+- `Hyeonseop` f33392e("Solar 실행 선택용 집계 함수 추가"): 수정안의 알고리즘 담당 첫 산출물이다. `src/mining_job.py`의 `MiningJob`에 `profile()`(1차 통계와 설정별 메모리 추정), `pilot()`(표본 시험 집계), `validate_setting()`(예산 검사), `run()`(전체 집계)이 있다. `src/pcy.py`의 1차 패스를 `_encode_baskets`, `_count_buckets`로 나눴고, 결과는 그대로다. 설명은 `plan/solar_mining_tools.md`, 테스트는 `tests/test_mining_job.py`다.
+- 시험 병합: 임시 worktree에서 `main`에 `Hyeonseop` → `goeun` → `yuchan-final`을 합쳤다. 충돌이 없다. 테스트 모듈 9개(`test_textbook`, `test_pcy_hash`, `test_evaluate`, `test_answer_key`, `test_answer_check`, `test_api`, `test_agent_tools`, `test_role2_integration`, `test_mining_job`)가 모두 통과한다.
+- 병합본 `season_filter`: "Christmas 2010" 315개, "christmas season" 315개, "december 2010" 0개, "winter 2010" 0개, "summer 2011" 0개. 11/17 결정과 같다.
+- 병합본 `MiningJob`으로 Y1, support 1%를 돌렸다. 빈발 상품 713, 세 설정 모두 빈발 쌍 585, 관측 후보 Apriori 252,748, PCY 작은 버킷 243,918, PCY 큰 버킷 1,238. 기준 수치가 유지된다.
+
+수정안 보완점과 이어지는 관찰 (기준 PC, 1회 측정):
+
+- `profile()`이 0.39초 걸린다. 1년 차 전체 집계와 비슷한 크기라, 지금 규모에서는 통계를 만드는 비용만으로 선택의 이득을 넘을 수 있다 (보완점 B).
+- 예산 64 MiB에서는 세 설정이 모두 통과하고, 모델 메모리는 Apriori가 가장 작다(1,015,312 B, PCY 작은 버킷 3,054,127 B, PCY 큰 버킷 4,194,292 B). 이 입력에서는 메모리 기준 규칙 기반 선택이 늘 Apriori를 고른다. 예산을 1~4 MB 사이로 줄여야 선택이 갈린다 (보완점 A).
+- `pilot()` 기본값(장바구니 1,000개, 기준 10건)은 0.02초에 끝나지만, 빈발 쌍이 1,060개로 전체의 585개와 크게 다르다. 표본 결과는 시간 추정용으로만 쓰고, 개수는 Solar에 "표본 기준"으로 표시해 보낸다.
+
 ## 수정안 검토 (11/20)
 
 대상: `Basket Insight Agent 프로젝트 수정안.docx` (레포 밖).
@@ -154,9 +177,9 @@ H3 질문과 정답지는 `agent-v1` 태그 전까지 에이전트 담당에게 
 
 11/20 추가 요청:
 
-- [ ] 11. H3 파일 4개(`tests/h3_questions.csv`, `tests/h3_answer_key.csv`, `results/h3_grading.csv`, `results/h3_router_runs.jsonl`)를 `agent-v1` 태그 전까지 브랜치에 두지 않는다. 방법은 최영인과 따로 정한다.
-- [ ] 12. `goeun`을 합친 상태에서 `src/agent.py` 충돌을 풀 수 있게, `main`과 `goeun`을 받아 `season_filter` 변경을 다시 맞춘다.
-- [ ] 13. `scripts/grade_h3.py`가 질문·정답지 경로를 인자나 환경변수로 받게 하고, 기본값을 레포 밖 폴더로 둔다. 채점 결과도 레포 밖에 쓴다.
+- [x] 11. H3 파일 4개(`tests/h3_questions.csv`, `tests/h3_answer_key.csv`, `results/h3_grading.csv`, `results/h3_router_runs.jsonl`)를 `agent-v1` 태그 전까지 브랜치에 두지 않는다. 방법은 최영인과 따로 정한다.
+- [x] 12. `goeun`을 합친 상태에서 `src/agent.py` 충돌을 풀 수 있게, `main`과 `goeun`을 받아 `season_filter` 변경을 다시 맞춘다.
+- [x] 13. `scripts/grade_h3.py`가 질문·정답지 경로를 인자나 환경변수로 받게 하고, 기본값을 레포 밖 폴더로 둔다. 채점 결과도 레포 밖에 쓴다.
 
 ## 최영인 (데이터·재현)
 

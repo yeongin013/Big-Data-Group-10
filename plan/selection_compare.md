@@ -6,9 +6,10 @@
 수정안 검토 E).
 
 방식의 정의는 `reviews/change_requests.md`의 수정안 검토와 11/23 점검,
-`plan/solar_mining_tools.md`(`Hyeonseop` f33392e), `plan/solar_selection_integration.md`
-(`goeun-solar-selection` ff79472)를 따랐다. 두 브랜치는 아직 `main`에 합쳐지지 않았다.
-수정안 원문과 다른 부분이 있으면 고친다.
+`plan/solar_mining_tools.md`(`main` 4ed6518에 병합됨),
+`plan/solar_selection_integration.md`(`goeun-solar-selection` ff79472)를 따랐다.
+`goeun-solar-selection`은 아직 `main`에 합쳐지지 않았다. 수정안 원문과 다른 부분이
+있으면 고친다.
 
 ## 1. 비교 대상
 
@@ -30,20 +31,27 @@
 | 조건 | 쓸 값 |
 |---|---|
 | `dataset` (입력) | I0: 1년 차 전체. I1: 큰 입력. 만드는 방법은 B에서 정한다(표본 추출, 장바구니 복제, 2년치 전체) |
-| `support` | 0.01 |
-| `memory_budget_bytes` (예산) | 아래 두 수준 |
+| `support` | 0.01. 예산 B0.25에서는 0.0025(0.25%) |
+| `memory_budget_bytes` (예산) | 아래 세 수준 |
 | `repeat` | 횟수는 아직 정하지 않았다. 정해지면 적는다 |
 
-11/23 측정(기준 PC)에서 I0의 모델 메모리 추정치는 Apriori 1,015,312 B, `pcy_small`
-3,054,127 B, `pcy_large` 4,194,292 B다. 예산은 이 세 값 사이에서 정한다.
+지지도 1%에서 I0의 모델 메모리 추정치는 Apriori 1,015,312 B, `pcy_small` 2,935,207 B,
+`pcy_large` 4,194,292 B다(`main` 4ed6518 코드로 계산, 후보 수는 `exact`). 예산은 이 세
+값 사이에서 정한다.
 
-| 예산 | 범위 | 후보 설정 | 보려는 것 |
-|---|---|---|---|
-| B0 | 4,194,292 B 이상(11/23 측정은 64 MiB) | 셋 | 세 설정 중에서 고르는 차이 |
-| B1 | 3,054,127 B 이상 4,194,292 B 미만 | 둘(`apriori`, `pcy_small`) | 예산이 `pcy_large`를 가려낼 때의 차이 |
+| 지지도 | 예산 | 범위 | 후보 설정 | 보려는 것 |
+|---|---|---|---|---|
+| 1% | B0 | 4,194,292 B 이상(11/23 측정은 64 MiB) | 셋 | 세 설정 중에서 고르는 차이 |
+| 1% | B1 | 2,935,207 B 이상 4,194,292 B 미만 | 둘(`apriori`, `pcy_small`) | 예산이 `pcy_large`를 가려낼 때의 차이 |
+| 0.25% | B0.25 | 6 MiB(6,291,456 B) | 하나(`pcy_large`) | PCY가 메모리 모델에서 유리해지는 경우(이슈 #5) |
 
-후보가 하나뿐인 예산(1,015,312 B 이상 3,054,127 B 미만)에서는 세 방식이 같은 설정을
-고르므로 시간 차이만 남는다.
+후보가 하나뿐인 예산(지지도 1%에서 1,015,312 B 이상 2,935,207 B 미만)에서는 세 방식이
+같은 설정을 고르므로 시간 차이만 남는다.
+
+B0.25의 추정치는 I0가 Apriori 8,229,624 B, `pcy_small` 21,344,227 B, `pcy_large`
+4,194,292 B다. 2년치 전체(38,700건)는 Apriori 10,039,680 B, `pcy_small` 27,411,247 B,
+`pcy_large` 4,194,292 B다. 둘 다 `pcy_large`만 예산 안에 들어간다. B0.25의 입력은 I0와
+2년치 전체다. 2년치 전체를 I1로 쓸지는 B에서 정한다.
 
 ## 3. 열
 
@@ -58,7 +66,7 @@
 | `t_select_s` | Solar 선택 시간 | `selected`, `fallback` 이벤트의 `selection_seconds`. 표본 집계 시간을 포함한다 |
 | `t_mining_s` | 전체 집계 시간 | `run(selected)` |
 | `t_total_s` | 작업 총 시간 | 접수부터 결과까지. `profile()`을 포함한다 |
-| `mem_model_bytes` | 모델 메모리 | `profile()`의 `settings[selected]["modeled_memory_bytes"]` |
+| `mem_model_bytes` | 모델 메모리 | `profile()`의 `settings[selected]["modeled_memory_bytes"]`. `n_candidates_estimate`를 근사한 경우(`candidate_count_method`가 `exact`가 아님)에는 예산 판정에 쓴 `modeled_memory_upper_bound_bytes`를 함께 적는다 |
 | `mem_peak_bytes` | 실제 최대 메모리 | 측정 방법은 D에서 정한다 |
 | `n_solar_calls` | Solar 요청 수 | `chat()` 호출 수 |
 | `n_pilots` | 표본 집계 수 | `pilot` 이벤트 수 |

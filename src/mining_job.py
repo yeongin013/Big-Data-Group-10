@@ -3,6 +3,7 @@
 from collections import Counter
 from copy import deepcopy
 from functools import cached_property
+from math import log1p
 from random import Random
 from time import perf_counter
 
@@ -14,6 +15,51 @@ from src import apriori, pcy
 # Stable names for the agent tool schema. The value is the PCY bucket count.
 SETTINGS = ("apriori", "pcy_small", "pcy_large")
 _PCY_BUCKETS = {"pcy_small": 65_521, "pcy_large": 1_048_573}
+_EXACT_PAIR_LIMIT = 1 << 24
+_SKETCH_SLOTS = 1 << 20
+
+
+def _mix_pair_ids(pair_ids):
+    """Mix dense pair IDs before mapping them to sketch slots (SplitMix64 finalizer)."""
+    keys = pair_ids.astype(np.uint64)
+    keys = (keys ^ (keys >> 30)) * np.uint64(0xBF58476D1CE4E5B9)
+    keys = (keys ^ (keys >> 27)) * np.uint64(0x94D049BB133111EB)
+    return keys ^ (keys >> 31)
+
+
+def _count_pcy_candidates(ids, ranks, bucket_masks, n_possible_pairs):
+    """Count occupied slots for observed candidate pairs under each bucket mask."""
+    exact = n_possible_pairs <= _EXACT_PAIR_LIMIT
+    n_slots = n_possible_pairs if exact else _SKETCH_SLOTS
+    bitmaps = {size: np.zeros((n_slots + 7) // 8, dtype=np.uint8) for size in bucket_masks}
+    starts = apriori._row_starts(int(np.count_nonzero(ranks >= 0)))
+    for start in range(0, len(ids), 128):
+        pairs = [pcy._pairs(basket[ranks[basket] >= 0]) for basket in ids[start:start + 128]]
+        left, right = zip(*pairs)
+        a, b = np.concatenate(left), np.concatenate(right)
+        i, j = ranks[a], ranks[b]
+        slots = starts[i] + j - i - 1
+        if not exact:
+            slots = (_mix_pair_ids(slots) % n_slots).astype(np.intp)
+        for size, mask in bucket_masks.items():
+            kept = slots[mask[pcy.bucket(a, b, size)]]
+            # Multiple slots can share one byte. Accumulate every bit in that byte.
+            np.bitwise_or.at(bitmaps[size], kept // 8, (1 << (kept % 8)).astype(np.uint8))
+    return {size: (int(np.bitwise_count(bitmap).sum()), exact) for size, bitmap in bitmaps.items()}
+
+
+def _candidate_estimate(occupied, exact, upper):
+    if exact:
+        return occupied, "exact"
+    if occupied >= 0.95 * _SKETCH_SLOTS:
+        return upper, "upper_bound"
+    estimate = round(-_SKETCH_SLOTS * log1p(-occupied / _SKETCH_SLOTS))
+    return min(estimate, upper), "bitmap_estimate"
+
+
+def _pcy_memory_bytes(n_buckets, n_candidates):
+    bitmap_bytes = (n_buckets + 7) // 8
+    return max(4 * n_buckets, bitmap_bytes + 12 * n_candidates)
 
 
 class MiningJob:
@@ -51,19 +97,31 @@ class MiningJob:
 
         idx = {item: rank for rank, item in enumerate(sorted(item_counts))}
         ids = pcy._encode_baskets(baskets, idx)
+        ranks = np.full(len(idx), -1, dtype=np.int64)
+        ranks[[idx[item] for item in sorted(frequent)]] = np.arange(m)
         candidate_upper = min(possible_pairs, frequent_pair_occurrences)
-        for setting, n_buckets in _PCY_BUCKETS.items():
+        bucket_masks = {}
+        upper_bounds = {}
+        for n_buckets in _PCY_BUCKETS.values():
             counts = pcy._count_buckets(ids, n_buckets)
             frequent_buckets = counts >= self._threshold
-            ratio = np.count_nonzero(frequent_buckets) / n_buckets
-            # Same storage model as pcy.run; unknown candidate count uses an upper bound.
             passing_occurrences = int(np.sum(counts, where=frequent_buckets))
-            candidates = min(candidate_upper, passing_occurrences)
-            bitmap_bytes = (n_buckets + 7) // 8
+            bucket_masks[n_buckets] = frequent_buckets
+            upper_bounds[n_buckets] = min(candidate_upper, passing_occurrences)
+            del counts
+        occupied = _count_pcy_candidates(ids, ranks, bucket_masks, possible_pairs)
+        for setting, n_buckets in _PCY_BUCKETS.items():
+            upper = upper_bounds[n_buckets]
+            candidates, method = _candidate_estimate(*occupied[n_buckets], upper)
             estimates[setting] = {
                 "n_buckets": n_buckets,
-                "frequent_bucket_ratio": ratio,
-                "modeled_memory_bytes": max(4 * n_buckets, bitmap_bytes + 12 * candidates),
+                "frequent_bucket_ratio": float(np.count_nonzero(bucket_masks[n_buckets]) / n_buckets),
+                "n_candidates_estimate": candidates,
+                "candidate_count_method": method,
+                "modeled_memory_bytes": _pcy_memory_bytes(n_buckets, candidates),
+                "modeled_memory_upper_bound_bytes": _pcy_memory_bytes(
+                    n_buckets, candidates if method == "exact" else upper
+                ),
             }
 
         return {
@@ -88,7 +146,8 @@ class MiningJob:
         """Reject unknown settings and choices above the modeled storage budget."""
         if setting not in SETTINGS:
             raise ValueError(f"setting must be one of {', '.join(SETTINGS)}")
-        estimate = self._profile["settings"][setting]["modeled_memory_bytes"]
+        stats = self._profile["settings"][setting]
+        estimate = stats.get("modeled_memory_upper_bound_bytes", stats["modeled_memory_bytes"])
         if estimate > self._budget:
             raise ValueError(f"{setting} modeled storage ({estimate} bytes) exceeds the budget ({self._budget} bytes)")
 

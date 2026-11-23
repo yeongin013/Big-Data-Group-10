@@ -75,10 +75,15 @@ def f2(b):
 
 def t2(b):
     from src import pcy
-    det, tim = pcy.compare(b[b.year == 1]["items"])
+    baskets = b[b.year == 1]["items"].tolist()
+    det, tim = pcy.compare(baskets)
     det.to_csv(RESULTS / "pcy_compare.csv", index=False)
     tim.to_csv(RESULTS / "timings.csv", index=False)
     print(det.to_string(index=False))
+    threshold = apriori.min_count(len(baskets), 0.01)
+    pairs = apriori.run(baskets, threshold)["pairs"]
+    triples = apriori.count_frequent_triples(baskets, pairs, threshold)
+    print(f"Frequent triples at support 1%: {triples}")
 
 
 def t3(b):

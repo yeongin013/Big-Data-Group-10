@@ -17,13 +17,22 @@ def bucket(i, j, n_buckets):
     return (i * P + j) % n_buckets
 
 
-def _pairs(ids, _tri={}):
+def _pairs(ids):
     """All pairs i < j of a sorted id array, as two arrays."""
-    k = len(ids)
-    if k not in _tri:
-        _tri[k] = np.triu_indices(k, 1)
-    a, b = _tri[k]
+    a, b = apriori.pair_indices(len(ids))
     return ids[a], ids[b]
+
+
+def _encode_baskets(baskets, idx):
+    return [np.array([idx[item] for item in basket], dtype=np.int64) for basket in baskets]
+
+
+def _count_buckets(ids, n_buckets):
+    counts = np.zeros(n_buckets, dtype=np.int64)
+    for start in range(0, len(ids), 1000):
+        hashes = [bucket(*_pairs(basket), n_buckets) for basket in ids[start:start + 1000]]
+        counts += np.bincount(np.concatenate(hashes), minlength=n_buckets)
+    return counts
 
 
 def run(baskets, threshold, n_buckets):
@@ -33,29 +42,32 @@ def run(baskets, threshold, n_buckets):
     and textbook memory per pass."""
     baskets = list(baskets)
     # item ids: sort codes, so i < j iff code_i < code_j (baskets are sorted tuples, so id arrays come out sorted)
-    codes = sorted({i for t in baskets for i in t})
+    item_counts = Counter(i for t in baskets for i in t)
+    codes = sorted(item_counts)
     idx = {c: k for k, c in enumerate(codes)}
-    ids = [np.array([idx[i] for i in t], dtype=np.int64) for t in baskets]
+    ids = _encode_baskets(baskets, idx)
 
     # pass 1: count items, and hash every pair of every basket into a bucket count (§6.3.1)
-    item_counts = Counter(i for t in baskets for i in t)
-    bucket_counts = np.zeros(n_buckets, dtype=np.int64)
-    for s in range(0, len(ids), 1000):  # ponytail: chunks of 1000 baskets keep the hash arrays small
-        h = [bucket(*_pairs(x), n_buckets) for x in ids[s:s + 1000]]
-        bucket_counts += np.bincount(np.concatenate(h), minlength=n_buckets)
+    bucket_counts = _count_buckets(ids, n_buckets)
 
-    # between passes: frequent items, and the bucket array replaced by a bitmap (1 bit per bucket)
+    # Pack one bit per bucket. Keep counts for the hash diagnostic returned by run().
     frequent = sorted(i for i, c in item_counts.items() if c >= threshold)
     is_freq_item = np.zeros(len(codes), dtype=bool)
     is_freq_item[[idx[i] for i in frequent]] = True
-    bitmap = bucket_counts >= threshold
+    frequent_buckets = bucket_counts >= threshold
+    frequent_bucket_ratio = float(frequent_buckets.mean())
+    bitmap = np.packbits(frequent_buckets, bitorder="little")
+    del frequent_buckets
+
+    def passes(indices):
+        return ((bitmap[indices // 8] >> (indices % 8)) & 1).astype(bool)
 
     # pass 2: count only candidate pairs = both items frequent AND pair hashes to a frequent bucket
     keys = []
     for x in ids:
         x = x[is_freq_item[x]]
         a, b = _pairs(x)
-        keep = bitmap[bucket(a, b, n_buckets)]
+        keep = passes(bucket(a, b, n_buckets))
         keys.append(a[keep] * len(codes) + b[keep])  # pair -> one int64 key, stands in for the (i, j, count) triple
     uniq, counts = np.unique(np.concatenate(keys) if keys else np.empty(0, np.int64), return_counts=True)
     pairs = {(codes[k // len(codes)], codes[k % len(codes)]): int(c)
@@ -63,14 +75,14 @@ def run(baskets, threshold, n_buckets):
 
     # all C(m, 2) pairs of frequent items that pass the bitmap, occurring or not (comparable to apriori n_candidates)
     f = np.flatnonzero(is_freq_item)
-    n_candidates_all = int(bitmap[bucket(*_pairs(f), n_buckets)].sum())
+    n_candidates_all = int(np.count_nonzero(passes(bucket(*_pairs(f), n_buckets))))
 
     n_candidates = len(uniq)  # candidate pairs actually seen in pass 2 = triples stored
     mem1 = 4 * n_buckets  # pass 1: 4-byte count per bucket
-    mem2 = n_buckets // 8 + 12 * n_candidates  # pass 2: bitmap + 12-byte triple per candidate (§6.2.2)
+    mem2 = bitmap.nbytes + 12 * n_candidates  # textbook packed bitmap + candidate records
     return {"item_counts": item_counts, "frequent": frequent, "pairs": pairs,
             "bucket_counts": bucket_counts, "n_buckets": n_buckets,
-            "frequent_bucket_ratio": float(bitmap.mean()),
+            "frequent_bucket_ratio": frequent_bucket_ratio,
             "n_candidates": n_candidates, "n_candidates_all": n_candidates_all,
             "memory_pass1_bytes": mem1, "memory_pass2_bytes": mem2, "memory_bytes": max(mem1, mem2)}
 
@@ -100,7 +112,7 @@ def compare(baskets, levels=(0.02, 0.01, 0.005, 0.0025), buckets=(65_521, 1_048_
         a, secs, peak = _timed(lambda: apriori.run(baskets, t), repeats)
         det.append({"level": s, "threshold": t, "algorithm": "apriori", "n_buckets": np.nan,
                     "n_frequent_items": len(a["frequent"]), "n_candidates": a["n_candidates"],
-                    "n_candidates_all": a["n_candidates"], "frequent_bucket_ratio": np.nan,
+                    "n_candidates_all": a["n_candidates_all"], "frequent_bucket_ratio": np.nan,
                     "memory_pass1_bytes": np.nan, "memory_pass2_bytes": a["memory_bytes"],
                     "memory_bytes": a["memory_bytes"], "n_frequent_pairs": len(a["pairs"])})
         tim.append({"level": s, "algorithm": "apriori", "n_buckets": np.nan, **_stats(secs, peak), **env})

@@ -51,6 +51,7 @@ class MiningSelector:
         self.history = []
         self.pilot_used = False
         self.reselection_used = False
+        self.n_solar_calls = 0  # chat() requests over select() and reselect()
 
     def _event(self, kind, **fields):
         event = {"event": kind, **fields}
@@ -90,6 +91,7 @@ class MiningSelector:
         try:
             for _ in range(1 if self.strategy == "solar_once" else 4):
                 specs = TOOLS if self.strategy == "solar_pilot" and not self.pilot_used else [TOOLS[1]]
+                self.n_solar_calls += 1
                 msg = self.chat(messages, specs)
                 calls = msg.get("tool_calls") or []
                 if not calls:

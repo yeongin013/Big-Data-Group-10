@@ -177,7 +177,10 @@ def process(job_id):
         mining = MiningJob(baskets(job["dataset"]), job["support"], job["memory_budget_bytes"])
         selector = MiningSelector(mining, job["strategy"], emit=lambda e: _add_event(job_id, e))
         t0 = time.perf_counter()
-        setting = selector.select()  # profile + choice (+ Solar calls and pilot)
+        mining.profile()  # computed once and cached, so the selection below is timed without it
+        profile_s = time.perf_counter() - t0
+        t0 = time.perf_counter()
+        setting = selector.select()  # choice (+ Solar calls and pilot)
         select_s = time.perf_counter() - t0
         try:
             stats = _mine(job, setting)
@@ -191,7 +194,9 @@ def process(job_id):
             stats = _mine(job, setting)
         finished = _now()
         total_s = (datetime.fromisoformat(finished) - datetime.fromisoformat(job["created_at"])).total_seconds()
-        stats.update(select_seconds=select_s, total_seconds=total_s,
+        stats.update(profile_seconds=profile_s, select_seconds=select_s, total_seconds=total_s,
+                     n_solar_calls=selector.n_solar_calls,
+                     n_pilots=sum(e["event"] == "pilot" for e in selector.history),
                      modeled_memory_bytes=mining.profile()["settings"][setting]["modeled_memory_bytes"])
         _update(job_id, status="completed", finished_at=finished, setting=setting, stats=json.dumps(stats),
                 message=f"{stats['n_frequent_pairs']} frequent pairs with {setting}")

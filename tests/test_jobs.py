@@ -55,6 +55,7 @@ def test_job_server():
             done = api.route("GET", f"/api/jobs/{job['id']}")
             assert done["status"] == "completed" and done["setting"] == "apriori", done["message"]
             assert [e["event"] for e in done["history"]] == ["profile", "selected"]
+            assert done["stats"]["n_solar_calls"] == 0 and done["stats"]["n_pilots"] == 0 and done["stats"]["profile_seconds"] > 0
             assert done["stats"]["mining_seconds"] > 0 and done["stats"]["total_seconds"] >= done["stats"]["select_seconds"]
             expected = apriori.run([tuple(t) for t in BASKETS], apriori.min_count(len(BASKETS), 0.25))["pairs"]
             res = api.route("GET", f"/api/jobs/{job['id']}/results")
@@ -91,6 +92,7 @@ def test_job_server():
                 assert m.call_args_list[0].args[1] != m.call_args_list[1].args[1]
             done = jobs.get(job["id"])
             assert done["status"] == "completed" and done["setting"] == "pcy_small"
+            assert done["stats"]["n_solar_calls"] == 2  # one choice, then one more after the failure
             assert "mining_failed" in [e["event"] for e in done["history"]]
             assert "reselection" in [e["event"] for e in done["history"]]
             with patch.object(jobs, "_mine", side_effect=RuntimeError("out of memory")):

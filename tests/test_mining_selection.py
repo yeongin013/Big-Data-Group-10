@@ -19,6 +19,7 @@ def test_solar_pilot_then_select():
     selector = MiningSelector(job(), chat=lambda messages, tools: next(script))
     assert selector.select() == "apriori"
     assert [x["event"] for x in selector.history] == ["profile", "pilot", "solar_choice", "selected"]
+    assert selector.n_solar_calls == 2
     assert selector.history[1]["scope"] == "sample"
 
 

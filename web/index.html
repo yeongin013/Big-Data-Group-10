@@ -451,7 +451,8 @@ async function showJob(job) {
   const tiles = done ? `<dl class="tiles">
       ${tile("고른 설정", esc(job.setting) + `<br><small>${esc(SETTING[job.setting] || "")}</small>`, "key")}
       ${tile("빈발 쌍", s.n_frequent_pairs.toLocaleString() + "<small> 개</small>")}
-      ${tile("선택 시간", secs(s.select_seconds))}
+      ${tile("통계 시간", secs(s.profile_seconds))}
+      ${tile("선택 시간", secs(s.select_seconds) + `<br><small>Solar 요청 ${s.n_solar_calls ?? "-"}회</small>`)}
       ${tile("집계 시간", secs(s.mining_seconds))}
       ${tile("전체 시간", secs(s.total_seconds) + "<br><small>접수부터 완료까지</small>")}
       ${tile("모델 메모리", mib(s.modeled_memory_bytes))}

@@ -23,6 +23,13 @@ def test_top_rules_limit_is_clamped():
     assert one["n_matching"] == many["n_matching"]  # clamp never changes the match count
 
 
+def test_season_filter_reads_years_with_a_suffix():
+    # a year outside the data must give no rules, also when it is written with 년 or next to a peak year
+    for period, expected in {"2011년 크리스마스": False, "2010년 크리스마스": True, "christmas 2010 and 2011": False,
+                             "Christmas 2010": True, "december 2010": False, "2009-12": True}.items():
+        assert bool(agent.season_filter(period)["rules"]) == expected, period
+
+
 if __name__ == "__main__":
     for name, f in list(globals().items()):
         if name.startswith("test_"):

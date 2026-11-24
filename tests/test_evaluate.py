@@ -152,6 +152,10 @@ def test_h3_table():
     assert list(t.n_hard_correct[["tool", "router"]]) == [2, 1]
     assert v["cond1_accuracy_ge_80"] and v["cond2_hard_beats_router"] and v["H3_yes"]
     assert math.isclose(v["mcnemar_p_tool_vs_paste"], 0.25)  # tool-only right: Q1, Q2, Q4; paste-only: none
+    from scripts import h3_grade_sheet
+    sheet = pd.DataFrame(h3_grade_sheet.rows(runs))  # empty sheet: same answers as the grades, ping skipped
+    assert list(sheet.columns) == ev.H3_GRADE_COLUMNS and len(sheet) == len(g)
+    assert set(zip(sheet.method, sheet.run, sheet.question_id)) == set(zip(g.method, g.run, g.question_id))
     for bad in (lambda: ev.h3_table(g, runs, "other"), lambda: ev.h3_table(g, runs[:-1], "k")):
         try:
             bad()

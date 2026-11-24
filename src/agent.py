@@ -130,7 +130,9 @@ def _is_peak_period(p):
     words = [w for w in re.split(r"[\s,/]+", p) if w]
     if not words or any(w in OFF_SEASON_WORDS for w in words):
         return False
-    year = next((int(w) for w in words if re.fullmatch(r"(19|20)\d{2}", w)), None)
+    # years anywhere in the text, so "2011년 크리스마스" is read as 2011 and not as a bare peak phrase
+    years = [int(y) for y in re.findall(r"(?<!\d)(?:19|20)\d{2}(?!\d)", p)]
+    year = next((y for y in years if y not in PEAK_YEARS), years[0] if years else None)
     month = next((MONTHS[w] for w in words if w in MONTHS), None)
     if month is not None:  # a specific month: must be one of the peak months in the right year
         return (year is None and f"-{month:02d}" in " ".join(SEASON_MONTHS)) or \

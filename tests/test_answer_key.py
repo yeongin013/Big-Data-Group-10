@@ -2,6 +2,8 @@
 
     H3_ANSWER_KEY=/path/to/h3_answer_key.csv python -m tests.test_answer_key
 Without H3_ANSWER_KEY it runs on tests/sample_answer_key.csv (SAMPLE, not the real key).
+H3 is graded with the agent at tag agent-v1, and its season_filter differs from the one on main.
+Check the real key in a checkout of that tag: git worktree add ../agent-v1-check agent-v1
 Key columns: id, kind (answer|trap), tool, args (JSON object of tool arguments).
 """
 import csv

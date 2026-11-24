@@ -73,7 +73,7 @@ python -m tests.test_role2_integration && python -m tests.test_mining_job
 
 The files in `results/` were rebuilt on the reference machine on 2026-11-24, after all member branches were merged. They are not frozen yet (the freeze is on 12/3). `timings.csv` and the `seconds` columns depend on the machine. The merge record and the open points for the report are in [`reviews/integration_1124.md`](reviews/integration_1124.md).
 
-**H3 grading sheet (`results/h3_grades.csv`).** One row per graded answer, with the columns `method` (`tool`, `paste` or `router`), `run`, `question_id`, `hard` (1 for a renamed-product or multi-call question), `grader1`, `grader2`, `agreed` (0 or 1) and `answer_key_sha256`. T6 fails if that SHA differs from the one committed in `reviews/h3_questions_sha256.txt`. `scripts/grade_h3.py` grades only the keyword router and writes a different file (`h3_grading.csv`).
+**H3 grading sheet (`results/h3_grades.csv`).** One row per graded answer, with the columns `method` (`tool`, `paste` or `router`), `run`, `question_id`, `hard` (1 for a renamed-product or multi-call question), `grader1`, `grader2`, `agreed` (0 or 1) and `answer_key_sha256`. T6 fails if that SHA differs from the one committed in `reviews/h3_questions_sha256.txt`. `scripts/grade_h3.py` grades only the keyword router and writes a different file (`h3_router_grading.csv`, outside the repository by default). `scripts/h3_grade_sheet.py RUNS.jsonl OUT.csv` makes the empty sheet from the stored runs.
 
 ## Solar agent setup
 

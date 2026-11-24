@@ -55,7 +55,7 @@ def main():
     questions = _path(a.questions, "H3_QUESTIONS", "h3_questions.csv", h3_dir)
     key_path = _path(a.key, "H3_ANSWER_KEY", "h3_answer_key.csv", h3_dir)
     runs_path = _path(a.runs, "H3_RUNS", "h3_router_runs.jsonl", h3_dir)
-    out_path = _path(a.out, "H3_OUT", "h3_grading.csv", h3_dir)
+    out_path = _path(a.out, "H3_OUT", "h3_router_grading.csv", h3_dir)
 
     if out_path.resolve().is_relative_to(ROOT.resolve()):
         print(f"warn: --out {out_path} is inside the repo; grading results stay outside until the agent-v1 tag")

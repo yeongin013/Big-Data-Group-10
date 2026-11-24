@@ -58,6 +58,12 @@ def build():
     return df.reset_index(drop=True), log
 
 
+def cancelled_codes():
+    """Product codes of the cancelled order lines (C invoices) after step 2. Reads the raw file again (slow)."""
+    df = _read_raw().drop_duplicates()
+    return df[df.Invoice.str.match(r"^C")].StockCode.reset_index(drop=True)
+
+
 def load_lines():
     """Cleaned order lines (cached parquet). Columns: invoice, code, description, quantity, date, price, customer, country."""
     path = _cache_path()

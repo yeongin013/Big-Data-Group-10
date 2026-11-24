@@ -131,6 +131,14 @@ def test_sensitivity_changed_flag():
     assert out["changed"].iloc[1:].all()
 
 
+def test_qty_overlap():
+    # rule a->b is in 2 baskets with 1 unit each (weight 4); rule c->d is in 1 basket with 50 units each (weight 100)
+    lines = pd.DataFrame({"invoice": [1, 1, 2, 2, 3, 3], "code": list("ababcd"), "quantity": [1, 1, 1, 1, 50, 50]})
+    rules = pd.DataFrame({"antecedent": ["a", "c"], "consequent": ["b", "d"], "support": [0.2, 0.1]})
+    assert ev.qty_overlap(rules, lines, k=1) == 0  # top by support is a->b, top by quantity is c->d
+    assert ev.qty_overlap(rules, lines, k=2) == 2
+
+
 def test_h3_table():
     assert [round(x, 3) for x in ev.wilson(24, 30)] == [0.627, 0.905]  # plan §1: about 63~90%
     assert ev.mcnemar_exact(0, 0) == 1.0 and math.isclose(ev.mcnemar_exact(5, 0), 2 / 32)

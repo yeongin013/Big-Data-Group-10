@@ -65,7 +65,7 @@ python -m tests.test_role2_integration && python -m tests.test_mining_job
 | T2 | `pcy_compare.csv`, `timings.csv` (machine-dependent) |
 | T3 | `h1_seeds.csv`, `h1_summary.csv`, `null_check.csv` |
 | T4 | `h2.csv`, `h2_strata.csv` |
-| T5 | `t5_sensitivity.csv` |
+| T5 | `t5_sensitivity.csv`, `t5_descriptive.csv` |
 | F1 | `f1_monthly_baskets.csv`, `f1_monthly_baskets.png` |
 | F2 | `f2_conf_y1_y2.csv`, `f2_conf_y1_y2.png` |
 | T6 | `h3_summary.csv` (built from `agent_runs.jsonl` and `h3_grades.csv`; skipped until both exist) |

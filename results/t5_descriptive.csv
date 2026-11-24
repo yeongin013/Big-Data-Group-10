@@ -1,0 +1,11 @@
+row,value,note
+quantity: top-20 by support also in top-20 by quantity weight,10.0,of 20
+product turnover: rules with a product that is gone in year 2,2.0,of 189
+"long tail: distinct products recommended, rules",94.0,"mask seed 0, includes B0 fill"
+"long tail: distinct products recommended, B0",22.0,mask seed 0
+"long tail: distinct products recommended, B1",1456.0,"mask seed 0, includes B0 fill"
+confidence 0.3: number of rules,581.0,main set has 189
+"confidence 0.3: share held in year 2 (conf >= 0.3, lift > 1, antecedent >= 20)",0.8227194492254734,
+1-item baskets left out of the support denominator: number of rules,212.0,"18035 baskets, threshold 181"
+cancellations: share of cancelled order lines with a rule product,0.16619556113902847,19104 cancelled lines after exact-duplicate removal
+3-item sets: frequent triples at support 1%,103.0,count only

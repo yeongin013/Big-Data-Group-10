@@ -114,11 +114,14 @@ def t4(b):
 
 
 def t5(b):
-    """T5: §4 sensitivity rows (n_boot=100 per plan §6 fallback; switch to 1000 for the final run)."""
+    """T5: §4 판정 rows (H1 and H2 rerun, 1,000 bootstrap draws) and 서술 rows (numbers only)."""
     from src import evaluate
     t = evaluate.sensitivity(b, n_boot=1000)
     t.to_csv(RESULTS / "t5_sensitivity.csv", index=False)
     print(t.to_string(index=False))
+    d = evaluate.descriptive(b, clean.load_lines(), clean.cancelled_codes())
+    d.to_csv(RESULTS / "t5_descriptive.csv", index=False)
+    print(d.to_string(index=False))
 
 
 def t6(b):

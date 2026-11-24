@@ -264,6 +264,77 @@ def sensitivity(b, lines=None, n_boot=1000, h1_seeds=range(10), mask_seeds=range
     return df
 
 
+# ---------- §4 descriptive rows (서술 rows: numbers only, no verdict) ----------
+
+def qty_overlap(rules, y1_lines, k=20):
+    """How many of the top-k rules by support are also in the top-k by quantity-weighted support.
+    Quantity weight of a rule = total units of its two products over the baskets that hold both."""
+    q = y1_lines.groupby(["invoice", "code"]).quantity.sum()
+    per_item = {c: g.droplevel("code") for c, g in q.groupby(level="code")}
+    weight = []
+    for x, y in zip(rules.antecedent, rules.consequent):
+        both = per_item[x].index.intersection(per_item[y].index)
+        weight.append(per_item[x][both].sum() + per_item[y][both].sum())
+    r = rules.assign(weight=weight)
+    key = lambda df: set(zip(df.antecedent, df.consequent))
+    by_support = r.sort_values(["support", "antecedent", "consequent"], ascending=[False, True, True]).head(k)
+    by_weight = r.sort_values(["weight", "antecedent", "consequent"], ascending=[False, True, True]).head(k)
+    return len(key(by_support) & key(by_weight))
+
+
+def coverage(b, mask_seed=0):
+    """Distinct products recommended at least once to the Y2 evaluation baskets, per method (masking as in H2)."""
+    y1 = b[b.year == 1]
+    rules, r = year_rules(y1)
+    cnt = r["item_counts"]
+    b0_order = sorted(cnt, key=lambda i: (-cnt[i], i))
+    p = apriori.run(y1["items"], 5)["pairs"]
+    a, bb = np.array([k[0] for k in p]), np.array([k[1] for k in p])
+    c = np.array(list(p.values()))
+    ca, cb = np.array([cnt[i] for i in a]), np.array([cnt[i] for i in bb])
+    methods = {"rules": _index(rules.antecedent, rules.consequent, rules.confidence, rules.support), "b0": {},
+               "b1": _index(np.r_[a, bb], np.r_[bb, a], np.r_[c / ca, c / cb], np.r_[c, c] / len(y1))}
+    items = list(b[(b.year == 2) & (b["items"].str.len() >= 2)]["items"])
+    rng = np.random.default_rng(mask_seed)
+    m = [rng.integers(len(t)) for t in items]
+    return {name: len({y for t, i in zip(items, m) for y in recommend(t[:i] + t[i + 1:], idx, b0_order)})
+            for name, idx in methods.items()}
+
+
+def descriptive(b, lines, cancel_codes):
+    """T5 서술 rows of plan §4 as a (row, value, note) table. cancel_codes: product codes of the cancelled order lines."""
+    y1, y2 = b[b.year == 1], b[b.year == 2]
+    rules, r = year_rules(y1)
+    n1 = len(y1)
+    y1_lines = lines[lines.invoice.isin(set(y1.invoice))]
+    st = eval_stats(rules, y2)
+    cov = coverage(b)
+    loose = apriori.rules(r["pairs"], r["item_counts"], n1, min_conf=0.3)
+    sl = eval_stats(loose, y2)
+    multi = y1[y1["items"].str.len() >= 2]
+    rules_multi, _ = year_rules(multi)
+    rule_items = set(rules.antecedent) | set(rules.consequent)
+    codes = pd.Series(cancel_codes).str.upper()
+    rows = [
+        ("quantity: top-20 by support also in top-20 by quantity weight", qty_overlap(rules, y1_lines), "of 20"),
+        ("product turnover: rules with a product that is gone in year 2", int(((st.ante == 0) | (st.cons == 0)).sum()),
+         f"of {len(rules)}"),
+        ("long tail: distinct products recommended, rules", cov["rules"], "mask seed 0, includes B0 fill"),
+        ("long tail: distinct products recommended, B0", cov["b0"], "mask seed 0"),
+        ("long tail: distinct products recommended, B1", cov["b1"], "mask seed 0, includes B0 fill"),
+        ("confidence 0.3: number of rules", len(loose), f"main set has {len(rules)}"),
+        ("confidence 0.3: share held in year 2 (conf >= 0.3, lift > 1, antecedent >= 20)",
+         float(((sl.ante >= 20) & (sl.conf >= 0.3) & (sl.lift > 1)).mean()), ""),
+        ("1-item baskets left out of the support denominator: number of rules", len(rules_multi),
+         f"{len(multi)} baskets, threshold {apriori.min_count(len(multi), S)}"),
+        ("cancellations: share of cancelled order lines with a rule product", float(codes.isin(rule_items).mean()),
+         f"{len(codes)} cancelled lines after exact-duplicate removal"),
+        ("3-item sets: frequent triples at support 1%",
+         apriori.count_frequent_triples(y1["items"], r["pairs"], apriori.min_count(n1, S)), "count only"),
+    ]
+    return pd.DataFrame(rows, columns=["row", "value", "note"])
+
+
 # ---------- H3 table (§3.4) ----------
 
 H3_GRADE_COLUMNS = ["method", "run", "question_id", "hard", "grader1", "grader2", "agreed", "answer_key_sha256"]

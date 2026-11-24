@@ -104,6 +104,8 @@ python -m src.api            # http://127.0.0.1:8000
 - **Browse rules:** the three agent tools (`rules_for`, `top_rules`, `season_filter`) as forms.
 - **API:** `GET /api/rules_for?product=`, `GET /api/top_rules?min_support=&min_confidence=&limit=`, `GET /api/season_filter?period=`, `POST /api/ask {"question", "method"}`, `GET /api/health`. See `src/api.py`.
 
+- **Job history (H4 extension):** submit a mining job with a dataset (`y1` or `all`), a support, a memory budget and a selection strategy (`rules`, `solar_once` or `solar_pilot`). The server stores the job in SQLite (`data/jobs/jobs.sqlite`), a worker thread chooses the setting, and a separate Python process does the full count. API: `POST /api/jobs`, `GET /api/jobs/{id}`, `GET /api/jobs/{id}/results` (add `?format=csv` for a download). See `src/jobs.py` and [`reviews/h4_progress.md`](reviews/h4_progress.md). Offline test: `python -m tests.test_jobs`.
+
 **Answer check (`src/answer_check.py`).** It applies the plan §3.4 number rules automatically. Every number in an answer must appear in the question or in the output of a tool called for that answer. Ratios may differ by ±0.005, counts must match exactly, and 43% counts as 0.43. Answers are labelled `ok`, `invented` (a number with no source), `no_numbers` (rules were found but none are cited), `refusal`, or `unclear`. To check a whole run log:
 
 ```bash

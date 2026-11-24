@@ -10,6 +10,11 @@ GET  /api/top_rules?min_support=0.01&min_confidence=0.5&limit=10
 GET  /api/season_filter?period=christmas
 POST /api/ask   {"question": "...", "method": "tool" | "paste" | "router"}
                 -> answer, tool calls with their outputs, answer check, seconds
+POST /api/jobs  {"dataset": "y1" | "all", "support": 0.01, "memory_budget_bytes": 67108864,
+                 "strategy": "rules" | "solar_once" | "solar_pilot", "deadline": optional ISO 8601}
+                -> the queued job (H4, see src/jobs.py)
+GET  /api/jobs/3                                         status, chosen setting, selection history, stats
+GET  /api/jobs/3/results[?format=csv]                    frequent pairs of a completed job
 
 The GET endpoints and method "router" need no API key. "tool" and "paste" call Solar (UPSTAGE_API_KEY).
 The server binds to 127.0.0.1 by default. It only serves the product-level rule tables.
@@ -24,7 +29,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import parse_qs, urlparse
 
-from src import agent, answer_check
+from src import agent, answer_check, jobs
 
 PAGE = Path(__file__).resolve().parent.parent / "web" / "index.html"
 METHODS = {"tool": agent.ask_tools, "router": agent.ask_router, "paste": agent.ask_paste}
@@ -93,9 +98,42 @@ def ask(body):
             "seconds": seconds}
 
 
+class Csv:
+    """A CSV download instead of a JSON reply."""
+
+    def __init__(self, text, filename):
+        self.raw, self.filename = text.encode(), filename
+
+
+def job_route(method, path, q, body):
+    """The three H4 job routes. Returns None when the path is not a job route."""
+    m = re.fullmatch(r"/api/jobs(?:/(\d{1,9})(/results)?)?", path)
+    if not m:
+        return None
+    job_id, want_results = m.group(1), m.group(2)
+    try:
+        if method == "POST" and job_id is None:
+            return jobs.submit(body or {})
+        if method == "GET" and job_id and not want_results:
+            return jobs.get(int(job_id))
+        if method == "GET" and want_results:
+            job, rows = jobs.results(int(job_id))
+            if q.get("format", [""])[0] == "csv":
+                lines = ["a,b,count"] + [f"{r['a']},{r['b']},{r['count']}" for r in rows]
+                return Csv("\n".join(lines) + "\n", f"job_{job_id}_pairs.csv")
+            return {"id": job["id"], "setting": job["setting"], "n_frequent_pairs": len(rows),
+                    "csv": f"/api/jobs/{job_id}/results?format=csv", "pairs": rows}
+    except jobs.JobError as e:
+        raise ApiError(e.status, str(e))
+    return None
+
+
 def route(method, url, body=None):
     u = urlparse(url)
     q = parse_qs(u.query)
+    job_reply = job_route(method, u.path, q, body)
+    if job_reply is not None:
+        return job_reply
     if method == "GET" and u.path == "/api/health":
         return health()
     if method == "GET" and u.path == "/api/rules_for":
@@ -117,9 +155,14 @@ class Handler(BaseHTTPRequestHandler):
     server_version = "BasketInsight/1"
 
     def _send(self, status, data, ctype="application/json; charset=utf-8"):
+        filename = None
+        if isinstance(data, Csv):
+            data, ctype, filename = data.raw, "text/csv; charset=utf-8", data.filename
         raw = data if isinstance(data, bytes) else json.dumps(data, ensure_ascii=False).encode()
         self.send_response(status)
         self.send_header("Content-Type", ctype)
+        if filename:
+            self.send_header("Content-Disposition", f'attachment; filename="{filename}"')
         self.send_header("Content-Length", str(len(raw)))
         self.send_header("Cache-Control", "no-store")
         self.end_headers()
@@ -168,6 +211,7 @@ class Handler(BaseHTTPRequestHandler):
 
 def serve(host="127.0.0.1", port=8000, quiet=False):
     agent.tables()  # load (or build) the rule tables before the first request
+    jobs.start_worker()
     srv = ThreadingHTTPServer((host, port), Handler)
     srv.quiet = quiet
     return srv

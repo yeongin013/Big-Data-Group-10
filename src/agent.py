@@ -113,34 +113,49 @@ def top_rules(min_support=SUPPORT, min_confidence=CONF, limit=10):
     return res
 
 
-def is_peak_period(period):
-    """Recognize the pooled peak period; reject explicit unrelated years, months and seasons."""
-    p = str(period).lower().strip()
-    if not p or re.search(r"summer|spring|autumn|fall|winter|여름|봄|가을|겨울", p):
+MONTHS = {"january": 1, "february": 2, "march": 3, "april": 4, "may": 5, "june": 6,
+          "july": 7, "august": 8, "september": 9, "october": 10, "november": 11, "december": 12}
+OFF_SEASON_WORDS = ("summer", "spring", "autumn", "fall", "winter", "easter",
+                    "여름", "봄", "가을", "겨울", "부활절")
+PEAK_YEARS = (2009, 2010)
+PEAK_ALIASES = ("christmas", "xmas", "peak", "holiday", "season", "성수기", "크리스마스", "연말") + SEASON_MONTHS
+
+
+def _is_peak_period(p):
+    """Team decision (2026-11-17, reviews/change_requests.md): a period names the peak season
+    (Y1 months 2009-12 and 2010-11) when it is a peak phrase, or a month+year inside those
+    months, with the year limited to 2009/2010 for bare season phrases ("christmas 2010" -> yes,
+    "christmas 2011" -> no). Any other season or month/year ("summer season", "easter 2012",
+    "december 2010") is not in the data."""
+    words = [w for w in re.split(r"[\s,/]+", p) if w]
+    if not words or any(w in OFF_SEASON_WORDS for w in words):
         return False
-    years = re.findall(r"(?<!\d)(?:19|20)\d{2}(?!\d)", p)
-    if any(y not in ("2009", "2010") for y in years):
-        return False
-    dates = re.findall(r"(?<!\d)((?:19|20)\d{2})[-/.](0?[1-9]|1[0-2])(?!\d)", p)
-    if any(f"{y}-{int(m):02d}" not in SEASON_MONTHS for y, m in dates):
-        return False
-    months = re.findall(r"\b(january|february|march|april|may|june|july|august|september|october|november|december)\b", p)
-    if any(m not in ("november", "december") for m in months):
-        return False
-    if months and years and any((m, y) not in (("december", "2009"), ("november", "2010")) for m in months for y in years):
-        return False
-    if dates or months:
-        return bool(dates or (months and years))
-    return any(w in p for w in ("christmas", "xmas", "peak", "holiday", "성수기", "크리스마스"))
+    year = next((int(w) for w in words if re.fullmatch(r"(19|20)\d{2}", w)), None)
+    month = next((MONTHS[w] for w in words if w in MONTHS), None)
+    if month is not None:  # a specific month: must be one of the peak months in the right year
+        return (year is None and f"-{month:02d}" in " ".join(SEASON_MONTHS)) or \
+               (year is not None and f"{year}-{month:02d}" in SEASON_MONTHS)
+    if any(w in SEASON_MONTHS for w in words):  # literal "2009-12" / "2010-11"
+        return True
+    if any(w in PEAK_ALIASES for w in words):  # peak phrase; year, if any, must be a peak year
+        return year is None or year in PEAK_YEARS
+    return False
 
 
 def season_filter(period):
-    """Peak-season rules (Y1 baskets in 2009-12 and 2010-11). Other periods are not in the data -> empty."""
+    """Peak-season rules (Y1 baskets in 2009-12 and 2010-11). Other periods are not in the data -> empty.
+
+    Accepts peak phrases ("christmas season", "peak", "연말 성수기"), the peak months
+    ("2009-12", "december 2009", "november 2010") and season+peak-year phrases
+    ("Christmas 2010"). Everything else (other years, other seasons, other months)
+    returns no rules.
+    """
     _, season = tables()
-    if not is_peak_period(period):
-        return {"period": period, "n_rules": 0, "rules": [],
-                "message": f"Unknown period. Only the peak season ({', '.join(SEASON_MONTHS)}) is available."}
-    return _result(season, period=period, table="peak season (2009-12 and 2010-11)")
+    p = str(period).strip().lower()
+    if _is_peak_period(p):
+        return _result(season, period=period, table="peak season (2009-12 and 2010-11)")
+    return {"period": period, "n_rules": 0, "rules": [],
+            "message": f"Unknown period. Only the peak season ({', '.join(SEASON_MONTHS)}) is available."}
 
 
 TOOLS = {"rules_for": rules_for, "top_rules": top_rules, "season_filter": season_filter}

@@ -1,6 +1,7 @@
 """Small hand-made checks for src/evaluate.py and src/null_model.py. Run: python -m tests.test_evaluate"""
 import math
 from collections import Counter
+from unittest.mock import patch
 
 import numpy as np
 import pandas as pd
@@ -44,6 +45,11 @@ def test_fisher_small_case():
     assert abs(nm.fisher_greater(4, 4, 4, 10) - 1 / math.comb(10, 4)) < 1e-12
 
 
+def test_max_product_support():
+    assert nm.max_product_support([]) == 0.0
+    assert nm.max_product_support([(1, 2), (1,), (2,)]) == 2 / 3
+
+
 def test_shuffle_keeps_margins():
     bs = [tuple("abc"), tuple("ab"), tuple("acd"), tuple("bd"), tuple("a")]
     out, left = nm.shuffle(bs, np.random.default_rng(0))
@@ -58,6 +64,71 @@ def test_split_reaches_target():
     assert list(ids) == [2, 2, 0, 4, 3, 1] and list(sizes) == [1, 1, 2, 1, 1]  # members by number, then guests by invoice
     m = ev._split(ids, sizes, 3, np.random.default_rng(0))
     assert m.sum() >= 3 and m[0] == m[1]  # same customer stays on one side
+
+
+def test_ci_is_reproducible():
+    d = np.array([0.0, 1.0, 1.0, 0.0])
+    unit = np.array(["a", "a", "b", "b"])
+    assert np.array_equal(ev._ci(d, unit, 100, seed=7), ev._ci(d, unit, 100, seed=7))
+
+
+def test_sensitivity_helpers():
+    baskets = pd.DataFrame({
+        "items": [("a", "b"), ("a", "c"), ("a", "b"), ("d",)],
+        "year": [1, 1, 2, 2],
+        "customer": [1, 2, 1, -1],
+    })
+    rules = pd.DataFrame({"antecedent": ["a"], "consequent": ["b"]})
+    assert len(ev.top5_filter(rules, baskets)) <= 1
+    trimmed = ev.drop_top1pct(baskets)
+    assert set(trimmed.columns) == set(baskets.columns)
+
+
+def test_merge_same_day_combines_member_invoices_but_not_guests():
+    lines = pd.DataFrame({
+        "invoice": ["m1", "m2", "g1", "g2"],
+        "code": ["A", "B", "A", "B"],
+        "description": ["a", "b", "a", "b"],
+        "quantity": [1, 1, 1, 1],
+        "date": pd.to_datetime(["2010-01-01 09:00", "2010-01-01 15:00",
+                                 "2010-01-01 09:00", "2010-01-01 15:00"]),
+        "price": [1.0] * 4,
+        "customer": [7, 7, -1, -1],
+        "country": ["UK"] * 4,
+    })
+    baskets = ev.merge_same_day(lines)
+    member = baskets[baskets.customer == 7].iloc[0]
+    assert tuple(member["items"]) == ("A", "B")
+    assert len(baskets[baskets.customer == 7]) == 1
+    assert len(baskets[baskets.customer == -1]) == 2
+
+
+def test_sensitivity_changed_flag():
+    b = pd.DataFrame({
+        "items": [("a", "b"), ("a", "c")],
+        "year": [1, 2],
+        "customer": [1, 1],
+        "country": ["UK", "UK"],
+    })
+    calls = {"h1": 0, "h2": 0}
+
+    def fake_h1(*args, **kwargs):
+        calls["h1"] += 1
+        summary = {"mean_D": 0.10, "H1_yes": calls["h1"] == 1, "n_rules_full": 1}
+        return pd.DataFrame({"n_rules": [1]}), summary
+
+    def fake_h2(*args, **kwargs):
+        calls["h2"] += 1
+        per = pd.DataFrame({"diff": [0.05], "ci_cust_lo": [0.03],
+                            "H2_yes": [calls["h2"] == 1]})
+        return per, pd.DataFrame()
+
+    with patch.object(ev, "h1", side_effect=fake_h1), \
+         patch.object(ev, "h2", side_effect=fake_h2), \
+         patch.object(ev, "merge_same_day", return_value=b):
+        out = ev.sensitivity(b, lines=pd.DataFrame(), h1_seeds=range(1), mask_seeds=range(1), n_boot=1)
+    assert not bool(out.loc[0, "changed"])
+    assert out["changed"].iloc[1:].all()
 
 
 if __name__ == "__main__":

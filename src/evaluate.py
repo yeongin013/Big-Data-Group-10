@@ -237,7 +237,7 @@ def merge_same_day(lines=None):
     return clean.load_baskets(lines)
 
 
-def sensitivity(b, lines=None, n_boot=100, h1_seeds=range(10), mask_seeds=range(5)):
+def sensitivity(b, lines=None, n_boot=1000, h1_seeds=range(10), mask_seeds=range(5)):
     """T5: rerun H1 and H2 per 판정 row (§4 재실행 방법) and flag 'changed' per the §4 definition."""
     variants = [("baseline", b, None),
                 ("drop top 1% largest baskets per year", drop_top1pct(b), None),
@@ -280,6 +280,6 @@ if __name__ == "__main__":
     strata.to_csv(out / "h2_strata.csv", index=False)
     print(per.round(4).to_string(index=False), "\n", strata.round(4).to_string(index=False), f"\nH2 {time.time() - t:.1f}s")
     t = time.time()
-    t5 = sensitivity(b, n_boot=100)
+    t5 = sensitivity(b, n_boot=1000)
     t5.to_csv(out / "t5_sensitivity.csv", index=False)
     print(t5.round(4).to_string(index=False), f"\nT5 {time.time() - t:.1f}s")

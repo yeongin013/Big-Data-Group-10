@@ -10,6 +10,15 @@ from src import apriori, clean
 SPACES = ["main", "support_0.25", "b1", "peak"]
 
 
+def max_product_support(baskets):
+    """Return the largest single-product support for these baskets."""
+    baskets = list(baskets)
+    if not baskets:
+        return 0.0
+    _, _, _, item_counts = count_space(baskets, "main")
+    return max(item_counts.values(), default=0) / len(baskets)
+
+
 def space_baskets(b, space):
     """Baskets of a search space: Y1 for all, peak = Y1 baskets in 2009-12 and 2010-11."""
     y1 = b[b.year == 1]

@@ -101,12 +101,26 @@ def _timed(f, repeats):
     return out, secs, peak
 
 
+def _cpu_name():
+    """A specific processor name for timings.csv (change request #6): on macOS,
+    platform.processor() returns just 'arm', so query the brand string instead."""
+    if platform.system() == "Darwin":
+        import subprocess
+        try:
+            return subprocess.run(["sysctl", "-n", "machdep.cpu.brand_string"],
+                                  capture_output=True, text=True, check=True).stdout.strip() or "arm"
+        except Exception:
+            return platform.processor() or platform.machine()
+    uname = platform.uname()
+    return uname.processor or platform.processor() or uname.machine
+
+
 def compare(baskets, levels=(0.02, 0.01, 0.005, 0.0025), buckets=(65_521, 1_048_573), repeats=5):
     """A-Priori vs PCY at each support level. Returns (deterministic table, timings table)."""
     baskets = list(baskets)
     n = len(baskets)
     det, tim = [], []
-    env = {"processor": platform.processor(), "python": platform.python_version(), "repeats": repeats}
+    env = {"processor": _cpu_name(), "python": platform.python_version(), "repeats": repeats}
     for s in levels:
         t = apriori.min_count(n, s)
         a, secs, peak = _timed(lambda: apriori.run(baskets, t), repeats)

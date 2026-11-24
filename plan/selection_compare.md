@@ -15,7 +15,7 @@
 
 | `strategy` | 방식 | 선택 방법 | Solar 요청 | 전체 실행이 실패하면 |
 |---|---|---|---|---|
-| `rules` | 규칙 기반 선택 | 예산을 통과한 설정 중 Apriori, `pcy_small`, `pcy_large` 순서로 고른다. 팀 기준(A)이 정해질 때까지 쓰는 임시 규칙이다 | 0회 | 재선택 없음 |
+| `rules` | 규칙 기반 선택 | 예산을 통과한 설정 중 Apriori, `pcy_small`, `pcy_large` 순으로 첫 번째를 고른다(결정 A, `mining_selection.baseline`) | 0회 | 재선택 없음 |
 | `solar_once` | Solar 1회 선택 | `profile()`과 예산을 보고 Solar가 한 번 고른다 | 1회 | 재선택 없음 |
 | `solar_pilot` | Solar 시험 집계·재선택 | Solar가 `pilot()`을 한 번까지 요청하고 `choose`로 고른다 | 최대 4회 | 한 번 다시 고른다 |
 
@@ -30,10 +30,10 @@
 
 | 조건 | 쓸 값 |
 |---|---|
-| `dataset` (입력) | I0: 1년 차 전체. I1: 큰 입력. 만드는 방법은 B에서 정한다(표본 추출, 장바구니 복제, 2년치 전체) |
-| `support` | 0.01. 예산 B0.25에서는 0.0025(0.25%) |
-| `memory_budget_bytes` (예산) | 아래 세 수준 |
-| `repeat` | 횟수는 아직 정하지 않았다. 정해지면 적는다 |
+| `dataset` (입력) | I0: 1년 차 전체(`y1`, 19,743건). I1: 2년치 전체(`all`, 38,700건)(결정 B) |
+| `support` | 0.01. 조건 B0.25, B0.25-all에서는 0.0025(0.25%) |
+| `memory_budget_bytes` (예산) | 아래 조건 표 |
+| `repeat` | 5회. `scripts/run_selection_compare.py`의 기본값이다 |
 
 지지도 1%에서 I0의 모델 메모리 추정치는 Apriori 1,015,312 B, `pcy_small` 2,935,207 B,
 `pcy_large` 4,194,292 B다(`main` 4ed6518 코드로 계산, 후보 수는 `exact`). 예산은 이 세
@@ -43,15 +43,16 @@
 |---|---|---|---|---|
 | 1% | B0 | 4,194,292 B 이상(11/23 측정은 64 MiB) | 셋 | 세 설정 중에서 고르는 차이 |
 | 1% | B1 | 2,935,207 B 이상 4,194,292 B 미만 | 둘(`apriori`, `pcy_small`) | 예산이 `pcy_large`를 가려낼 때의 차이 |
-| 0.25% | B0.25 | 6 MiB(6,291,456 B) | 하나(`pcy_large`) | PCY가 메모리 모델에서 유리해지는 경우(이슈 #5) |
+| 0.25% | B0.25 | 6 MiB(6,291,456 B) | 하나(`pcy_large`) | PCY가 메모리 모델에서 유리해지는 경우(이슈 #5). 입력은 I0이다 |
+| 0.25% | B0.25-all | 6 MiB(6,291,456 B) | 하나(`pcy_large`) | B0.25와 같고 입력만 I1이다 |
 
 후보가 하나뿐인 예산(지지도 1%에서 1,015,312 B 이상 2,935,207 B 미만)에서는 세 방식이
 같은 설정을 고르므로 시간 차이만 남는다.
 
 B0.25의 추정치는 I0가 Apriori 8,229,624 B, `pcy_small` 21,344,227 B, `pcy_large`
-4,194,292 B다. 2년치 전체(38,700건)는 Apriori 10,039,680 B, `pcy_small` 27,411,247 B,
-`pcy_large` 4,194,292 B다. 둘 다 `pcy_large`만 예산 안에 들어간다. B0.25의 입력은 I0와
-2년치 전체다. 2년치 전체를 I1로 쓸지는 B에서 정한다.
+4,194,292 B다. I1은 Apriori 10,039,680 B, `pcy_small` 27,411,247 B, `pcy_large`
+4,194,292 B다. 둘 다 `pcy_large`만 예산 안에 들어간다. 조건 이름 B0.25와 B0.25-all은
+`scripts/run_selection_compare.py`를 따른다.
 
 ## 3. 열
 
@@ -67,7 +68,7 @@ B0.25의 추정치는 I0가 Apriori 8,229,624 B, `pcy_small` 21,344,227 B, `pcy_
 | `t_mining_s` | 전체 집계 시간 | `run(selected)` |
 | `t_total_s` | 작업 총 시간 | 접수부터 결과까지. `profile()`을 포함한다 |
 | `mem_model_bytes` | 모델 메모리 | `profile()`의 `settings[selected]["modeled_memory_bytes"]`. `n_candidates_estimate`를 근사한 경우(`candidate_count_method`가 `exact`가 아님)에는 예산 판정에 쓴 `modeled_memory_upper_bound_bytes`를 함께 적는다 |
-| `mem_peak_bytes` | 실제 최대 메모리 | 측정 방법은 D에서 정한다 |
+| `mem_peak_bytes` | 실제 최대 메모리 | 집계 프로세스의 최대 상주 메모리로, 작업 `stats`의 `peak_rss_bytes`다. 기준 PC에서만 잰다(결정 D). Windows에서는 비어 있다 |
 | `n_solar_calls` | Solar 요청 수 | `chat()` 호출 수 |
 | `n_pilots` | 표본 집계 수 | `pilot` 이벤트 수 |
 | `failures` | 실패 원인 | 4절 분류. 없으면 비워 둔다 |
@@ -110,20 +111,21 @@ B0.25의 추정치는 I0가 Apriori 8,229,624 B, `pcy_small` 21,344,227 B, `pcy_
 | `solar_once` | | | | | | | | | |
 | `solar_pilot` | | | | | | | | | |
 
-## 6. 정해지면 채울 것
+## 6. 결정과 남은 것
 
-| 항목 | 바뀌는 곳 | 상태 |
+결정 내용은 `reviews/h4_progress.md`의 결정 표에 있다.
+
+| 항목 | 바뀐 곳 | 내용 |
 |---|---|---|
-| A 규칙 기반 선택 정의 | `rules` 행의 `selected` | 공통. 지금은 임시 규칙(예산 통과 순서)이다 |
-| B 큰 입력 만드는 방법 | `dataset` I1 행 | 공통. 11/23 측정에서 `profile()`이 0.39초라, I0에서는 선택 비용이 집계 절감보다 클 수 있다 |
-| C 시간의 기준 PC | 시간 열 | 담당은 `reviews/change_requests.md`의 담당별 할 일표를 따른다 |
-| D 실제 최대 메모리 측정법 | `mem_peak_bytes` | 같은 표. `tracemalloc`은 프로세스 전체 메모리가 아니다 |
-| 반복 수 | `repeat` | 아직 정하지 않았다 |
+| A 규칙 기반 선택 정의 | 1절 `rules` 행 | 결정(11/24). 예산을 통과한 설정 중 Apriori, `pcy_small`, `pcy_large` 순으로 첫 번째를 고른다(`mining_selection.baseline`) |
+| B 큰 입력 | 2절 `dataset` 행 | 결정(11/24). 2년치 전체 38,700건을 쓴다. 서버 데이터셋 이름은 `all`이다. 11/23 측정에서 `profile()`이 0.39초라, I0에서는 선택 비용이 집계 절감보다 클 수 있다 |
+| C 시간의 기준 PC | 3절 시간 열 | 결정(11/20). 기준 PC 값으로 쓴다 |
+| D 실제 최대 메모리 측정법 | 3절 `mem_peak_bytes` 행 | 결정(11/24). 기준 PC에서만 잰다. 집계 프로세스가 표준 라이브러리 `resource`로 자기 최대 상주 메모리를 기록한다. Windows에서는 값이 비어 있다 |
+| 반복 수 | 2절 `repeat` 행 | 5회. `scripts/run_selection_compare.py`의 기본값이다 |
 
-채우기 전에 먼저 필요한 것:
+채우기 전에 필요했던 것은 11/24에 갖춰졌다.
 
-- `n_solar_calls`: `history`에 `chat()` 요청 수가 없다. 서버가 세거나 이벤트에 추가해야 한다.
-- 서버: SQLite 작업 서버와 `POST /api/jobs`가 아직 없다(`plan/solar_selection_integration.md`).
-  `t_total_s`, `deadline`, `run_failed`는 서버를 통한 실행에서만 잰다.
+- Solar 요청 수: 작업 `stats`의 `n_solar_calls`, `n_pilots`로 기록된다.
+- 서버: `src/jobs.py`에 작업 서버가 있고 `/api/jobs` 경로로 접수한다. `t_total_s`는 서버를 통한 실행에서 잰다.
 - `deadline` 정할 때 쓸 값: `chat()` 한 번은 최악의 경우 363초 걸린다(120초 × 3회 시도 +
   대기 3초). `solar_pilot`은 요청이 여러 번이다.

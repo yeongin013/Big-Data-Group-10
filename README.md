@@ -36,7 +36,7 @@ The script saves `data/raw/online_retail_II.xlsx` and checks its SHA-256 checksu
 ## Method
 
 1. **Frequent itemsets (MMDS Chapter 6):** Implement A-Priori and PCY to find frequent item pairs (triples reported as counts). Derive association rules with support, confidence, and lift. Compare the two algorithms on memory use and run time.
-2. **Validation:** Mine rules on an earlier time window and check whether they still hold on a later window. This addresses the risk of false discoveries (MMDS §1.2, Bonferroni's principle).
+2. **Validation:** Mine rules on an earlier time window and check whether they still hold on a later window (H1). Separately, a shuffle null and Fisher's exact test with a Bonferroni correction estimate how many rules could appear by chance (MMDS §1.2).
 3. **Baseline:** Compare HitRate@5 on held-out items against a popularity baseline (the five most common year-1 products) and against unfiltered pair rules.
 4. **LLM agent:** Build an agent on Upstage Solar with tool calls such as `rules_for(product)`, `top_rules(min_support, min_confidence)`, and `season_filter(period)`. The agent answers questions such as "Which rules have high confidence during the peak season?" and cites the supporting support and confidence values.
 
@@ -71,7 +71,9 @@ python -m tests.test_role2_integration && python -m tests.test_mining_job
 | T6 | `h3_summary.csv` (built from `agent_runs.jsonl` and `h3_grades.csv`; skipped until both exist) |
 | Agent tables | `rules_y1.csv`, `rules_season.csv` (rebuilt by a full `run_all`) |
 
-All numbers are first-draft values. Open issues from review round 1 are listed in [`reviews/draft1_review.md`](reviews/draft1_review.md).
+The files in `results/` were rebuilt on the reference machine on 2026-11-24, after all member branches were merged. They are not frozen yet (the freeze is on 12/3). `timings.csv` and the `seconds` columns depend on the machine. The merge record and the open points for the report are in [`reviews/integration_1124.md`](reviews/integration_1124.md).
+
+**H3 grading sheet (`results/h3_grades.csv`).** One row per graded answer, with the columns `method` (`tool`, `paste` or `router`), `run`, `question_id`, `hard` (1 for a renamed-product or multi-call question), `grader1`, `grader2`, `agreed` (0 or 1) and `answer_key_sha256`. T6 fails if that SHA differs from the one committed in `reviews/h3_questions_sha256.txt`. `scripts/grade_h3.py` grades only the keyword router and writes a different file (`h3_grading.csv`).
 
 ## Solar agent setup
 

@@ -1,4 +1,5 @@
 """H1 (time stability), H2 (masked-item prediction) and the T5 sensitivity rows. Definitions: plan_v0.6 §1, §3.2, §4."""
+import math
 import time
 
 import numpy as np
@@ -261,6 +262,67 @@ def sensitivity(b, lines=None, n_boot=1000, h1_seeds=range(10), mask_seeds=range
                      | ((df.mean_D - base.mean_D).abs() >= 0.05) | ((df.mean_diff - base.mean_diff).abs() >= 0.02))
     df.loc[0, "changed"] = False
     return df
+
+
+# ---------- H3 table (§3.4) ----------
+
+H3_GRADE_COLUMNS = ["method", "run", "question_id", "hard", "grader1", "grader2", "agreed", "answer_key_sha256"]
+
+
+def wilson(k, n, z=1.959964):
+    """Wilson 95% interval for k correct out of n."""
+    if n == 0:
+        return float("nan"), float("nan")
+    p = k / n
+    mid, half = p + z * z / (2 * n), z * math.sqrt(p * (1 - p) / n + z * z / (4 * n * n))
+    return (mid - half) / (1 + z * z / n), (mid + half) / (1 + z * z / n)
+
+
+def mcnemar_exact(b, c):
+    """Two-sided exact McNemar p-value from the two discordant counts."""
+    n = b + c
+    return 1.0 if n == 0 else min(1.0, 2 * sum(math.comb(n, i) for i in range(min(b, c) + 1)) / 2 ** n)
+
+
+def h3_table(grades, runs, committed_key_sha):
+    """T6 from the grading sheet and the stored runs. Returns (per-method table, verdict dict).
+
+    grades: one row per graded answer with H3_GRADE_COLUMNS. method is tool, paste or router;
+    hard is 1 for renamed-product and multi-call questions; grader1, grader2 and agreed are 0/1.
+    runs: records of results/agent_runs.jsonl. committed_key_sha: answer-key SHA-256 committed before agent-v1.
+    A question is correct when at least 2 of its 3 runs are (the router runs once, so 1 of 1).
+    """
+    shas = set(grades.answer_key_sha256)
+    if shas != {committed_key_sha}:
+        raise ValueError(f"grades use answer key {sorted(shas)}, committed is {committed_key_sha}: grade again")
+    run_keys = {(r["method"], r["run"], r["question_id"]): r for r in runs if r.get("method") != "ping"}
+    for key in zip(grades.method, grades.run, grades.question_id):
+        if key not in run_keys:
+            raise ValueError(f"graded answer {key} is not in agent_runs.jsonl")
+        if run_keys[key].get("answer_key_sha256") != committed_key_sha:
+            raise ValueError(f"run {key} was made with another answer key: run and grade again")
+    rows, correct = [], {}
+    for method, g in grades.groupby("method"):
+        per_q = g.groupby("question_id").agg(right=("agreed", "sum"), n=("agreed", "size"), hard=("hard", "max"))
+        ok = per_q.right * 2 > per_q.n
+        correct[method] = ok
+        lo, hi = wilson(int(ok.sum()), len(ok))
+        rows.append({"method": method, "n_questions": len(ok), "n_correct": int(ok.sum()), "accuracy": ok.mean(),
+                     "wilson_lo": lo, "wilson_hi": hi,
+                     "n_split_questions": int(((per_q.right > 0) & (per_q.right < per_q.n)).sum()),
+                     "n_grader_disagreements": int((g.grader1 != g.grader2).sum()),
+                     "n_hard": int(per_q.hard.sum()), "n_hard_correct": int(ok[per_q.hard == 1].sum())})
+    table = pd.DataFrame(rows).set_index("method")
+    verdict = {}
+    if "tool" in table.index:
+        verdict["cond1_accuracy_ge_80"] = bool(table.accuracy["tool"] >= 0.8)
+    if {"tool", "router"} <= set(table.index):
+        verdict["cond2_hard_beats_router"] = bool(table.n_hard_correct["tool"] > table.n_hard_correct["router"])
+        verdict["H3_yes"] = verdict["cond1_accuracy_ge_80"] and verdict["cond2_hard_beats_router"]
+    if {"tool", "paste"} <= set(table.index):
+        t, p = correct["tool"].align(correct["paste"], join="inner")
+        verdict["mcnemar_p_tool_vs_paste"] = mcnemar_exact(int((t & ~p).sum()), int((~t & p).sum()))
+    return table.reset_index(), verdict
 
 
 if __name__ == "__main__":

@@ -127,7 +127,16 @@ def t6(b):
     if not (runs.exists() and grades.exists()):
         print("T6 skipped: results/agent_runs.jsonl or results/h3_grades.csv not present yet")
         return
-    print("Warning: T6 grading table generation is not implemented; existing runs and grades were preserved.")
+    import re
+    from src import evaluate
+    sha_file = (clean.ROOT / "reviews" / "h3_questions_sha256.txt").read_text(encoding="utf-8-sig")
+    key_sha = re.search(r"answer_key\.csv\s+SHA-256:\s*([0-9a-f]{64})", sha_file).group(1)
+    with open(runs, encoding="utf-8") as f:
+        records = [json.loads(line) for line in f if line.strip()]
+    table, verdict = evaluate.h3_table(pd.read_csv(grades), records, key_sha)
+    table.to_csv(RESULTS / "h3_summary.csv", index=False)
+    print(table.to_string(index=False))
+    print(json.dumps(verdict, indent=1))
 
 
 STEPS = {"T1": t1, "F1": f1, "F2": f2, "T2": t2, "T3": t3, "T4": t4, "T5": t5, "T6": t6}

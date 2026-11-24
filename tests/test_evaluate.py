@@ -131,6 +131,35 @@ def test_sensitivity_changed_flag():
     assert out["changed"].iloc[1:].all()
 
 
+def test_h3_table():
+    assert [round(x, 3) for x in ev.wilson(24, 30)] == [0.627, 0.905]  # plan §1: about 63~90%
+    assert ev.mcnemar_exact(0, 0) == 1.0 and math.isclose(ev.mcnemar_exact(5, 0), 2 / 32)
+    # 5 questions, Q1 and Q2 hard. tool: Q1..Q4 right in 2 of 3 runs, Q5 in 1 of 3. paste: only Q3 right. router: Q2, Q3.
+    right = {"tool": {"Q1": 2, "Q2": 2, "Q3": 2, "Q4": 2, "Q5": 1}, "paste": {"Q3": 3}, "router": {"Q2": 1, "Q3": 1}}
+    rows, runs = [], [{"method": "ping"}]
+    for method, n_runs in (("tool", 3), ("paste", 3), ("router", 1)):
+        for q in ("Q1", "Q2", "Q3", "Q4", "Q5"):
+            for run in range(1, n_runs + 1):
+                ok = int(run <= right[method].get(q, 0))
+                rows.append([method, run, q, int(q in ("Q1", "Q2")), ok, ok, ok, "k"])
+                runs.append({"method": method, "run": run, "question_id": q, "answer_key_sha256": "k"})
+    g = pd.DataFrame(rows, columns=ev.H3_GRADE_COLUMNS)
+    g.loc[0, "grader2"] = 0  # one disagreement, settled as right
+    t, v = ev.h3_table(g, runs, "k")
+    t = t.set_index("method")
+    assert list(t.n_correct[["tool", "paste", "router"]]) == [4, 1, 2]
+    assert t.n_split_questions["tool"] == 5 and t.n_grader_disagreements["tool"] == 1
+    assert list(t.n_hard_correct[["tool", "router"]]) == [2, 1]
+    assert v["cond1_accuracy_ge_80"] and v["cond2_hard_beats_router"] and v["H3_yes"]
+    assert math.isclose(v["mcnemar_p_tool_vs_paste"], 0.25)  # tool-only right: Q1, Q2, Q4; paste-only: none
+    for bad in (lambda: ev.h3_table(g, runs, "other"), lambda: ev.h3_table(g, runs[:-1], "k")):
+        try:
+            bad()
+        except ValueError:
+            continue
+        raise AssertionError("mismatched key or missing run must fail")
+
+
 if __name__ == "__main__":
     for name, f in list(globals().items()):
         if name.startswith("test_"):

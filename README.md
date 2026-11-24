@@ -13,7 +13,7 @@
 | 2023270643 | 유찬 | 이후 기간의 규칙 검증, 인기 상품 기준선 비교, 실행 시간과 메모리 측정 |
 | 2023271305 | 이현섭 | A-Priori·PCY 구현, 상품 쌍과 삼중항 탐색, 연관규칙 계산과 결과 검증 |
 
-Changes from the role proposal in plan §7: 정고은 and 이현섭 swapped the algorithm and agent roles, and run-time and memory measurement moved to evaluation. The H3 question set is written and graded by the data and evaluation members, and the agent member does not see it before the `agent-v1` tag (plan §3.4).
+Changes from the role proposal in plan §7: 정고은 and 이현섭 swapped the algorithm and agent roles, run-time and memory measurement moved to evaluation, and the reproduction rehearsals moved to data. The H3 question set is written and graded by the data and evaluation members, and the agent member does not see it before the `agent-v1` tag (plan §3.4).
 
 ## Problem
 
@@ -55,7 +55,8 @@ Run the tests (no pytest needed):
 
 ```bash
 python -m tests.test_textbook && python -m tests.test_pcy_hash && python -m tests.test_evaluate && python -m tests.test_answer_key
-python -m tests.test_answer_check && python -m tests.test_api   # agent, API and answer check, offline
+python -m tests.test_answer_check && python -m tests.test_api && python -m tests.test_agent_tools   # agent, API and answer check, offline
+python -m tests.test_role2_integration && python -m tests.test_mining_job
 ```
 
 | ID | Output in `results/` |
@@ -67,7 +68,8 @@ python -m tests.test_answer_check && python -m tests.test_api   # agent, API and
 | T5 | `t5_sensitivity.csv` |
 | F1 | `f1_monthly_baskets.csv`, `f1_monthly_baskets.png` |
 | F2 | `f2_conf_y1_y2.csv`, `f2_conf_y1_y2.png` |
-| Agent tables | `rules_y1.csv`, `rules_season.csv` (built by `src.agent` when missing) |
+| T6 | `h3_summary.csv` (built from `agent_runs.jsonl` and `h3_grades.csv`; skipped until both exist) |
+| Agent tables | `rules_y1.csv`, `rules_season.csv` (rebuilt by a full `run_all`) |
 
 All numbers are first-draft values. Open issues from review round 1 are listed in [`reviews/draft1_review.md`](reviews/draft1_review.md).
 

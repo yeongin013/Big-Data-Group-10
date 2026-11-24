@@ -129,13 +129,29 @@ def get(job_id):
     return job
 
 
+def recent(limit=20):
+    """Newest jobs first, without the history (the list view does not need it)."""
+    with _db() as con:
+        rows = con.execute("SELECT id, status, dataset, support, memory_budget_bytes, strategy, setting, message, "
+                           "created_at, finished_at FROM jobs ORDER BY id DESC LIMIT ?", (limit,)).fetchall()
+    return [dict(r) for r in rows]
+
+
+@functools.cache
+def _names(dataset):
+    """Product code -> name for the registered datasets. A basket file added for a test has no names."""
+    return clean.descriptions() if dataset in DATASETS else {}
+
+
 def results(job_id):
-    """(job, rows) for a completed job. rows: [{"a", "b", "count"}] sorted by count."""
+    """(job, rows) for a completed job. rows: [{"a", "a_name", "b", "b_name", "count"}] sorted by count."""
     job = get(job_id)
     if job["status"] != "completed":
         raise JobError(409, f"job {job_id} is {job['status']}, results exist only for completed jobs")
+    names = _names(job["dataset"])
     with open(_result_path(job_id), newline="", encoding="utf-8") as f:
-        return job, [{"a": r["a"], "b": r["b"], "count": int(r["count"])} for r in csv.DictReader(f)]
+        return job, [{"a": r["a"], "a_name": str(names.get(r["a"], "")).strip(), "b": r["b"],
+                      "b_name": str(names.get(r["b"], "")).strip(), "count": int(r["count"])} for r in csv.DictReader(f)]
 
 
 # ---------- worker side ----------

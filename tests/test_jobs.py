@@ -60,8 +60,11 @@ def test_job_server():
             res = api.route("GET", f"/api/jobs/{job['id']}/results")
             assert {(r["a"], r["b"]): r["count"] for r in res["pairs"]} == expected and len(expected) == 3
             csv_reply = api.route("GET", f"/api/jobs/{job['id']}/results?format=csv")
-            assert isinstance(csv_reply, api.Csv) and csv_reply.raw.decode().splitlines()[0] == "a,b,count"
+            assert isinstance(csv_reply, api.Csv) and csv_reply.raw.decode().splitlines()[0] == "a,a_name,b,b_name,count"
             assert len(csv_reply.raw.decode().splitlines()) == 4
+            assert len(api.route("GET", f"/api/jobs/{job['id']}/results?limit=2")["pairs"]) == 2
+            listed = api.route("GET", "/api/jobs")["jobs"]
+            assert listed[0]["id"] == job["id"] and listed[0]["status"] == "completed" and "history" not in listed[0]
 
             # Solar unavailable: the rule baseline takes over and the job still completes
             with patch.object(agent, "chat", side_effect=SystemExit("no key")):

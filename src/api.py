@@ -13,13 +13,16 @@ POST /api/ask   {"question": "...", "method": "tool" | "paste" | "router"}
 POST /api/jobs  {"dataset": "y1" | "all", "support": 0.01, "memory_budget_bytes": 67108864,
                  "strategy": "rules" | "solar_once" | "solar_pilot", "deadline": optional ISO 8601}
                 -> the queued job (H4, see src/jobs.py)
+GET  /api/jobs                                           the 20 newest jobs (no history)
 GET  /api/jobs/3                                         status, chosen setting, selection history, stats
-GET  /api/jobs/3/results[?format=csv]                    frequent pairs of a completed job
+GET  /api/jobs/3/results[?format=csv][&limit=50]         frequent pairs of a completed job, with product names
 
 The GET endpoints and method "router" need no API key. "tool" and "paste" call Solar (UPSTAGE_API_KEY).
 The server binds to 127.0.0.1 by default. It only serves the product-level rule tables.
 """
 import argparse
+import csv
+import io
 import json
 import math
 import re
@@ -114,15 +117,21 @@ def job_route(method, path, q, body):
     try:
         if method == "POST" and job_id is None:
             return jobs.submit(body or {})
+        if method == "GET" and job_id is None:
+            return {"jobs": jobs.recent()}
         if method == "GET" and job_id and not want_results:
             return jobs.get(int(job_id))
         if method == "GET" and want_results:
             job, rows = jobs.results(int(job_id))
             if q.get("format", [""])[0] == "csv":
-                lines = ["a,b,count"] + [f"{r['a']},{r['b']},{r['count']}" for r in rows]
-                return Csv("\n".join(lines) + "\n", f"job_{job_id}_pairs.csv")
+                out = io.StringIO()
+                w = csv.DictWriter(out, fieldnames=["a", "a_name", "b", "b_name", "count"], lineterminator="\n")
+                w.writeheader()
+                w.writerows(rows)
+                return Csv(out.getvalue(), f"job_{job_id}_pairs.csv")
+            limit = max(1, min(_num(q, "limit", len(rows) or 1, int), len(rows) or 1))
             return {"id": job["id"], "setting": job["setting"], "n_frequent_pairs": len(rows),
-                    "csv": f"/api/jobs/{job_id}/results?format=csv", "pairs": rows}
+                    "csv": f"/api/jobs/{job_id}/results?format=csv", "pairs": rows[:limit]}
     except jobs.JobError as e:
         raise ApiError(e.status, str(e))
     return None

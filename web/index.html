@@ -67,9 +67,26 @@ code { font-size: 13px; }
   <div class="tabs">
     <button class="on" data-tab="ask">에이전트에게 묻기</button>
     <button data-tab="browse">규칙 직접 조회</button>
+    <button data-tab="jobs">작업 이력</button>
   </div>
 </header>
 <main>
+  <section id="tab-jobs" class="hidden">
+    <div class="panel">
+      <h2>분석 작업</h2>
+      <p class="meta">작업 서버가 연결되면 등록된 데이터셋으로 분석을 요청하고 선택 이력을 확인할 수 있습니다.</p>
+      <div class="row">
+        <div><label for="jobDataset">데이터셋</label><input id="jobDataset" value="y1"></div>
+        <div><label for="jobSupport">지지도</label><input id="jobSupport" type="number" min="0.0001" max="1" step="0.001" value="0.01"></div>
+        <div><label for="jobMemory">메모리 예산 (MiB)</label><input id="jobMemory" type="number" min="1" value="64"></div>
+        <div><label for="jobStrategy">선택 방식</label><select id="jobStrategy"><option value="solar_pilot">Solar + 시험 집계</option><option value="solar_once">Solar 1회 선택</option><option value="rules">규칙 기반</option></select></div>
+        <div><label for="jobDeadline">마감 시각 (선택)</label><input id="jobDeadline" type="datetime-local"></div>
+        <button class="go" id="submitJob">작업 제출</button>
+      </div>
+      <div class="row"><div><label for="jobId">작업 번호</label><input id="jobId" placeholder="작업 번호"></div><button class="go" id="loadJob">상태 조회</button></div>
+    </div>
+    <div class="panel hidden" id="jobOut"></div>
+  </section>
   <section id="tab-ask">
     <div class="panel">
       <label for="q">질문</label>
@@ -205,7 +222,33 @@ document.querySelectorAll(".tabs button").forEach((b) => b.onclick = () => {
   document.querySelectorAll(".tabs button").forEach((x) => x.classList.toggle("on", x === b));
   $("tab-ask").classList.toggle("hidden", b.dataset.tab !== "ask");
   $("tab-browse").classList.toggle("hidden", b.dataset.tab !== "browse");
+  $("tab-jobs").classList.toggle("hidden", b.dataset.tab !== "jobs");
 });
+function showJob(data) {
+  const box = $("jobOut"); box.classList.remove("hidden");
+  const history = Array.isArray(data.history) ? data.history : [];
+  const id = String(data.id ?? data.job_id ?? $("jobId").value);
+  const results = data.status === "completed" && id ? `<p><a href="/api/jobs/${encodeURIComponent(id)}/results">완료 결과 보기 / 다운로드</a></p>` : "";
+  const rows = history.map((item) => `<li><strong>${esc(item.event || "기록")}</strong> <code>${esc(JSON.stringify(item))}</code></li>`).join("");
+  box.innerHTML = `<h3>작업 ${esc(id)}</h3><p>상태: ${esc(data.status ?? "확인 필요")}</p>${results}
+    <p class="meta">${esc(data.message ?? data.error ?? "")}</p><h3>선택 이력</h3><ol>${rows}</ol>
+    <pre class="answer">${esc(JSON.stringify(data, null, 2))}</pre>`;
+}
+async function loadJob() {
+  const id = $("jobId").value.trim(); if (!id) return;
+  try { showJob(await api(`/api/jobs/${encodeURIComponent(id)}`)); }
+  catch (e) { $("jobOut").classList.remove("hidden"); $("jobOut").innerHTML = `<p class="err">작업 조회 실패: ${esc(e.message)}</p>`; }
+}
+$("loadJob").onclick = loadJob;
+$("submitJob").onclick = async () => {
+  try {
+    const payload = {dataset:$("jobDataset").value.trim(), support:Number($("jobSupport").value),
+      memory_budget_bytes:Math.round(Number($("jobMemory").value)*1024*1024), strategy:$("jobStrategy").value};
+    if ($("jobDeadline").value) payload.deadline = new Date($("jobDeadline").value).toISOString();
+    const data = await api("/api/jobs", {method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify(payload)});
+    $("jobId").value = data.id ?? data.job_id ?? ""; showJob(data);
+  } catch (e) { $("jobOut").classList.remove("hidden"); $("jobOut").innerHTML = `<p class="err">작업 제출 실패: ${esc(e.message)}</p>`; }
+};
 document.querySelectorAll("button[data-q]").forEach((b) => b.onclick = () => browse(b.dataset.q));
 $("product").addEventListener("keydown", (e) => { if (e.key === "Enter") browse("rules_for"); });
 $("askBtn").onclick = ask;

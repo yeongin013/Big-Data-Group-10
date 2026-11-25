@@ -20,3 +20,6 @@ tests/h3_answer_key*.csv
 results/h3_*.jsonl
 results/h3_grading.csv
 results/h3_router_grading.csv
+
+# Claude Code local files (worktrees, settings)
+.claude/

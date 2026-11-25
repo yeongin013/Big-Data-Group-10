@@ -6,13 +6,18 @@
 Each row is one job: condition x strategy x repeat. Jobs go through src.jobs (SQLite row, selection,
 mining in a separate process), one at a time, so t_total_s has no queue wait. Rows with strategy
 "fixed:<setting>" run one setting without selection: they give the reference pairs and the fastest
-setting per condition (best_ok). solar_once and solar_pilot call Solar and need UPSTAGE_API_KEY;
-without a key they fall back to the rule baseline and the row says source rules_fallback.
+setting per condition (best_ok). solar_once and solar_pilot call Solar: the script stops at the start
+if UPSTAGE_API_KEY is missing. A Solar failure during the run falls back to the rule baseline and the
+row says source rules_fallback. Within each repeat the strategies run one after another, and the
+starting strategy rotates, so a change in Solar latency over the run does not land on one strategy.
+Jobs are stored in data/jobs/selection_compare/ (--db), apart from the jobs of the demo page.
 Times depend on the machine and on Solar latency. Run it on the reference machine only.
 """
 import argparse
 import csv
+import datetime
 import json
+import platform
 import statistics
 import subprocess
 import sys
@@ -22,7 +27,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
-from src import jobs  # noqa: E402
+from src import agent, jobs  # noqa: E402
 from src.mining_job import SETTINGS, MiningJob  # noqa: E402
 from src.mining_selection import valid_settings  # noqa: E402
 
@@ -33,7 +38,8 @@ CONDITIONS = [("B0", "y1", 0.01, 64 * MIB), ("B1", "y1", 0.01, int(3.5 * MIB)),
 COLUMNS = ["condition", "dataset", "support", "memory_budget_bytes", "strategy", "repeat", "status", "selected", "source",
            "pairs_ok", "best_ok", "t_profile_s", "t_pilot_s", "t_select_s", "t_mining_s",
            "t_pcy_pass1_s", "t_pcy_pass2_s", "t_total_s",
-           "mem_model_bytes", "mem_peak_bytes", "mem_mining_increase_bytes", "n_solar_calls", "n_pilots", "failures", "job_id"]
+           "mem_model_bytes", "mem_peak_bytes", "mem_mining_increase_bytes", "n_solar_calls", "n_pilots", "failures", "job_id",
+           "run_at", "commit", "solar_model", "python", "machine"]
 
 
 def failures(history):
@@ -63,6 +69,15 @@ def fixed_run(dataset, support, setting):
     return json.loads(p.stdout.strip().splitlines()[-1]), pairs
 
 
+def provenance():
+    """Same for every row of one run: when, which code, which Solar model, which machine."""
+    git = lambda *a: subprocess.run(["git", *a], cwd=ROOT, capture_output=True, text=True).stdout.strip()  # noqa: E731
+    return {"run_at": datetime.datetime.now().astimezone().isoformat(timespec="seconds"),
+            "commit": git("rev-parse", "--short", "HEAD") + ("-dirty" if git("status", "--porcelain") else ""),
+            "solar_model": agent.MODEL,  # the model requested
+            "python": platform.python_version(), "machine": f"{platform.system()} {platform.machine()}"}
+
+
 def run(repeats, strategies, conditions):
     rows = []
     for name, dataset, support, budget in conditions:
@@ -84,8 +99,8 @@ def run(repeats, strategies, conditions):
                              "mem_mining_increase_bytes": (s["peak_rss_bytes"] or 0) - (s["rss_before_mining_bytes"] or 0)})
         best = min(times, key=times.get) if times else None
         print(f"{name}: feasible {feasible}, fixed medians {({k: round(v, 3) for k, v in times.items()})}, fastest {best}")
-        for strategy in strategies:
-            for k in range(1, repeats + 1):
+        for k in range(1, repeats + 1):
+            for strategy in strategies[(k - 1) % len(strategies):] + strategies[:(k - 1) % len(strategies)]:
                 job_id = jobs.submit({"dataset": dataset, "support": support, "memory_budget_bytes": budget,
                                       "strategy": strategy})["id"]
                 jobs.process(job_id)
@@ -130,9 +145,16 @@ if __name__ == "__main__":
     a.add_argument("--strategies", nargs="+", default=list(jobs.STRATEGIES), choices=jobs.STRATEGIES)
     a.add_argument("--conditions", nargs="+", default=[c[0] for c in CONDITIONS], choices=[c[0] for c in CONDITIONS])
     a.add_argument("--out", default=str(ROOT / "results" / "selection_compare.csv"))
+    a.add_argument("--db", default=str(jobs.DB.parent / "selection_compare" / "jobs.sqlite"),
+                   help="job store of this run (job_id refers to it)")
     args = a.parse_args()
     assert set(SETTINGS) == {"apriori", "pcy_small", "pcy_large"}
-    result = run(args.repeats, args.strategies, [c for c in CONDITIONS if c[0] in args.conditions])
+    if set(args.strategies) - {"rules"}:
+        agent.api_key()  # stops here without a key, before any job runs
+    jobs.DB = Path(args.db)
+    stamp = provenance()
+    result = [{**r, **stamp} for r in
+              run(args.repeats, args.strategies, [c for c in CONDITIONS if c[0] in args.conditions])]
     with open(args.out, "w", newline="", encoding="utf-8") as f:
         w = csv.DictWriter(f, fieldnames=COLUMNS)
         w.writeheader()

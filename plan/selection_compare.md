@@ -74,7 +74,12 @@ B0.25의 추정치는 I0가 Apriori 8,229,624 B, `pcy_small` 21,344,227 B, `pcy_
 | `n_solar_calls` | Solar 요청 수 | `chat()` 호출 수 |
 | `n_pilots` | 표본 집계 수 | `pilot` 이벤트 수 |
 | `failures` | 실패 원인 | 4절 분류. 없으면 비워 둔다 |
+| `job_id` | 작업 번호 | 실험용 작업 저장소(`data/jobs/selection_compare/jobs.sqlite`)의 번호다. 화면이 쓰는 저장소와 다르다 |
+| `run_at`, `commit`, `solar_model`, `python`, `machine` | 실행 정보 | 실행 시각, 코드 커밋(커밋하지 않은 변경이 있으면 `-dirty`), 요청한 Solar 모델, Python 버전, 운영체제와 CPU 종류. 한 번의 실행에서 모든 행이 같다 |
 
+- 반복마다 세 방식을 차례로 돌리고, 시작하는 방식을 반복마다 바꾼다. Solar 응답 시간이
+  실행 도중에 변해도 한 방식에 몰리지 않는다.
+- Solar를 쓰는 방식이 있는데 `UPSTAGE_API_KEY`가 없으면 스크립트는 시작할 때 멈춘다.
 - 시간은 기준 PC에서 잰다(C). 반복의 중앙값을 쓰고 범위를 괄호에 적는다(`timings.csv`와
   같다).
 - PCY 패스별 시간은 전체 집계 시간에 포함되며, 비트맵 준비와 후보 공간 진단은

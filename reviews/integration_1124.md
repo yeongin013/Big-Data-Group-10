@@ -1,13 +1,13 @@
 # 병합과 결과 재생성 기록 (2026-11-24)
 
-브랜치 `worktree-integrate-h1-h3`에서 했다. 기준은 `main` 4ed6518이고, 기기는 기준 PC(최영인의 Mac, Apple M4 Pro, Python 3.14.0)다. 원격에는 아무것도 올리지 않았다.
+브랜치 `worktree-integrate-h1-h3`에서 했다. 기준은 `main` 4ed6518이고, 기기는 기준 PC(최영인의 Mac, Apple M4 Pro, Python 3.14.0)다. 이 문서를 처음 쓴 시점에는 원격에 아무것도 올리지 않았다. 그 뒤 같은 날 태그와 `main`을 올렸다 (아래 "아직 사람이 해야 하는 것" 2, 3).
 
 ## 한 일
 
 | # | 항목 | 결과 |
 |---|---|---|
-| 1 | `agent-v1` 태그 | `goeun` 29e3d29에 로컬 태그를 달았다. 원격에는 아직 없다 |
-| 2 | 병합 | `goeun` → `yuchan-final` 순서로 합쳤다. 충돌이 없다. `goeun-solar-selection`(H4)은 합치지 않았다 |
+| 1 | `agent-v1` 태그 | `goeun` 29e3d29에 로컬 태그를 달았다. 원격에는 같은 날 올렸다 |
+| 2 | 병합 | `goeun` → `yuchan-final` 순서로 합쳤다. 충돌이 없다. `goeun-solar-selection`(H4)은 이때 합치지 않았다. 11/25에 `h4-integration`을 거쳐 `main`에 병합했다 (`reviews/h4_progress.md`) |
 | 3 | 테스트 | 9개 모듈이 모두 통과한다 |
 | 4 | `run_all` 전체 | 성공. `results/`의 CSV 5개가 바뀌었다 (아래) |
 | 5 | T6 | `run_all`이 `agent_runs.jsonl`과 `h3_grades.csv`로 `h3_summary.csv`를 만든다. 테스트는 `tests/test_evaluate.py`의 `test_h3_table` |

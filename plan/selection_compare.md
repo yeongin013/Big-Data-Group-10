@@ -8,7 +8,7 @@
 방식의 정의는 `reviews/change_requests.md`의 수정안 검토와 11/23 점검,
 `plan/solar_mining_tools.md`(`main` 4ed6518에 병합됨),
 `plan/solar_selection_integration.md`(`goeun-solar-selection` ff79472)를 따랐다.
-`goeun-solar-selection`은 아직 `main`에 합쳐지지 않았다. 수정안 원문과 다른 부분이
+세 문서와 코드는 모두 `main`에 있다(11/25 병합). 수정안 원문과 다른 부분이
 있으면 고친다.
 
 ## 1. 비교 대상
@@ -61,10 +61,10 @@ B0.25의 추정치는 I0가 Apriori 8,229,624 B, `pcy_small` 21,344,227 B, `pcy_
 | `selected` | 고른 설정 | `selected` 이벤트의 `setting` |
 | `source` | 누가 골랐는가 | `selected` 이벤트의 `source`(`rules`, `solar`, `rules_fallback`) |
 | `pairs_ok` | 빈발 쌍이 기준 결과와 같은가 | `run(selected)`의 빈발 쌍과 빈도가 세 설정 공통 결과와 같은지 |
-| `best_ok` | 최선 선택인가 | 예산을 통과한 설정 중 집계 시간이 가장 짧은 것을 골랐는지. 설정별 시간은 T2(`timings.csv`)로 잰다 |
+| `best_ok` | 최선 선택인가 | 예산을 통과한 설정 중 집계 시간이 가장 짧은 것을 골랐는지. 설정별 시간은 같은 실행에서 설정을 고정해 돌린 행(`fixed:<설정>`)의 집계 시간 중앙값이다 |
 | `t_profile_s` | 통계 시간 | `profile()` |
 | `t_pilot_s` | 표본 집계 시간 | `pilot` 이벤트 `result`의 `elapsed_s`. 없으면 0 |
-| `t_select_s` | Solar 선택 시간 | `selected`, `fallback` 이벤트의 `selection_seconds`. 표본 집계 시간을 포함한다 |
+| `t_select_s` | 선택 시간 | 작업 `stats`의 `select_seconds`. `profile()`이 끝난 뒤부터 설정을 확정할 때까지다. Solar 요청과 표본 집계 시간을 포함하고, `t_profile_s`는 포함하지 않는다 |
 | `t_mining_s` | 전체 집계 시간 | `run(selected)` |
 | `t_pcy_pass1_s` | PCY 1차 패스 | 상품 빈도 집계, 상품 ID 변환, 해시 버킷 집계 |
 | `t_pcy_pass2_s` | PCY 2차 패스 | 후보 쌍 필터링과 빈도 집계, 빈발 쌍 결과 생성 |
@@ -103,6 +103,9 @@ B0.25의 추정치는 I0가 Apriori 8,229,624 B, `pcy_small` 21,344,227 B, `pcy_
 - `solar_error`, `solar_unreachable`, `deadline`은 평소에는 나오지 않으므로 따로 흉내 내어
   돌린다(`MiningSelector`의 `chat`에 실패하는 함수를 넣거나 잘못된 키, 짧은 `deadline`을
   쓴다). 그 행에는 조건에 `injected`를 적어 구분한다.
+- 11/25 기준으로 `scripts/run_selection_compare.py`는 흉내 실패 행을 만들지 않는다. 서버는
+  `deadline`을 저장만 하고 적용하지 않아서 `deadline` 값은 나오지 않는다. 이 둘을 실험에서
+  뺄지는 팀이 정한다.
 
 ## 5. 빈 표
 

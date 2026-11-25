@@ -39,8 +39,9 @@ def run(baskets, threshold, n_buckets):
     """baskets: iterable of sorted tuples of item codes. threshold: absolute count. n_buckets: number of hash buckets.
 
     Same item_counts / frequent / pairs as apriori.run, plus bucket_counts, frequent_bucket_ratio, candidate counts
-    and textbook memory per pass."""
+    and textbook memory per pass. Pass timings exclude bitmap preparation and diagnostics."""
     baskets = list(baskets)
+    pass1_started = time.perf_counter()
     # item ids: sort codes, so i < j iff code_i < code_j (baskets are sorted tuples, so id arrays come out sorted)
     item_counts = Counter(i for t in baskets for i in t)
     codes = sorted(item_counts)
@@ -49,6 +50,7 @@ def run(baskets, threshold, n_buckets):
 
     # pass 1: count items, and hash every pair of every basket into a bucket count (§6.3.1)
     bucket_counts = _count_buckets(ids, n_buckets)
+    pass1_seconds = time.perf_counter() - pass1_started
 
     # Pack one bit per bucket. Keep counts for the hash diagnostic returned by run().
     frequent = sorted(i for i, c in item_counts.items() if c >= threshold)
@@ -63,6 +65,7 @@ def run(baskets, threshold, n_buckets):
         return ((bitmap[indices // 8] >> (indices % 8)) & 1).astype(bool)
 
     # pass 2: count only candidate pairs = both items frequent AND pair hashes to a frequent bucket
+    pass2_started = time.perf_counter()
     keys = []
     for x in ids:
         x = x[is_freq_item[x]]
@@ -72,6 +75,7 @@ def run(baskets, threshold, n_buckets):
     uniq, counts = np.unique(np.concatenate(keys) if keys else np.empty(0, np.int64), return_counts=True)
     pairs = {(codes[k // len(codes)], codes[k % len(codes)]): int(c)
              for k, c in zip(uniq, counts) if c >= threshold}
+    pass2_seconds = time.perf_counter() - pass2_started
 
     # all C(m, 2) pairs of frequent items that pass the bitmap, occurring or not (comparable to apriori n_candidates)
     f = np.flatnonzero(is_freq_item)
@@ -84,6 +88,7 @@ def run(baskets, threshold, n_buckets):
             "bucket_counts": bucket_counts, "n_buckets": n_buckets,
             "frequent_bucket_ratio": frequent_bucket_ratio,
             "n_candidates": n_candidates, "n_candidates_all": n_candidates_all,
+            "pass1_seconds": pass1_seconds, "pass2_seconds": pass2_seconds,
             "memory_pass1_bytes": mem1, "memory_pass2_bytes": mem2, "memory_bytes": max(mem1, mem2)}
 
 

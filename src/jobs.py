@@ -237,7 +237,7 @@ def _peak_rss():
 
 
 def mine(dataset, support, setting, out):
-    """Count the full input with one setting, write the pairs CSV, and return stats (pass 1 + pass 2 time)."""
+    """Count the full input, write the pairs CSV, and return mining stats including PCY pass times."""
     if setting not in SETTINGS:
         raise SystemExit(f"unknown setting {setting}")
     job = MiningJob(baskets(dataset), support, MAX_BUDGET)  # the budget was checked by the worker
@@ -250,8 +250,11 @@ def mine(dataset, support, setting, out):
         w = csv.writer(f)
         w.writerow(["a", "b", "count"])
         w.writerows((a, b, c) for (a, b), c in pairs)
-    return {"setting": setting, "n_frequent_pairs": len(pairs), "n_candidates": result["n_candidates"],
-            "mining_seconds": seconds, "rss_before_mining_bytes": before, "peak_rss_bytes": _peak_rss()}
+    stats = {"setting": setting, "n_frequent_pairs": len(pairs), "n_candidates": result["n_candidates"],
+             "mining_seconds": seconds, "rss_before_mining_bytes": before, "peak_rss_bytes": _peak_rss()}
+    if "pass1_seconds" in result:
+        stats.update(pass1_seconds=result["pass1_seconds"], pass2_seconds=result["pass2_seconds"])
+    return stats
 
 
 if __name__ == "__main__":

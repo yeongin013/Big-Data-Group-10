@@ -21,6 +21,7 @@ def test_bucket_counts_by_hand():
     # candidates: ab ac ad bc bd (cd's bucket is infrequent). ad is a false positive: its bucket is frequent via de
     assert r["n_candidates"] == r["n_candidates_all"] == 5
     assert r["memory_pass1_bytes"] == 20 and r["memory_pass2_bytes"] == (5 + 7) // 8 + 12 * 5
+    assert r["pass1_seconds"] >= 0 and r["pass2_seconds"] >= 0
 
 
 def test_deterministic():

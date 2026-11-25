@@ -66,6 +66,8 @@ B0.25의 추정치는 I0가 Apriori 8,229,624 B, `pcy_small` 21,344,227 B, `pcy_
 | `t_pilot_s` | 표본 집계 시간 | `pilot` 이벤트 `result`의 `elapsed_s`. 없으면 0 |
 | `t_select_s` | Solar 선택 시간 | `selected`, `fallback` 이벤트의 `selection_seconds`. 표본 집계 시간을 포함한다 |
 | `t_mining_s` | 전체 집계 시간 | `run(selected)` |
+| `t_pcy_pass1_s` | PCY 1차 패스 | 상품 빈도 집계, 상품 ID 변환, 해시 버킷 집계 |
+| `t_pcy_pass2_s` | PCY 2차 패스 | 후보 쌍 필터링과 빈도 집계, 빈발 쌍 결과 생성 |
 | `t_total_s` | 작업 총 시간 | 접수부터 결과까지. `profile()`을 포함한다 |
 | `mem_model_bytes` | 모델 메모리 | `profile()`의 `settings[selected]["modeled_memory_bytes"]`. `n_candidates_estimate`를 근사한 경우(`candidate_count_method`가 `exact`가 아님)에는 예산 판정에 쓴 `modeled_memory_upper_bound_bytes`를 함께 적는다 |
 | `mem_peak_bytes` | 실제 최대 메모리 | 집계 프로세스의 최대 상주 메모리로, 작업 `stats`의 `peak_rss_bytes`다. 기준 PC에서만 잰다(결정 D). Windows에서는 비어 있다 |
@@ -75,6 +77,8 @@ B0.25의 추정치는 I0가 Apriori 8,229,624 B, `pcy_small` 21,344,227 B, `pcy_
 
 - 시간은 기준 PC에서 잰다(C). 반복의 중앙값을 쓰고 범위를 괄호에 적는다(`timings.csv`와
   같다).
+- PCY 패스별 시간은 전체 집계 시간에 포함되며, 비트맵 준비와 후보 공간 진단은
+  전체 집계 시간에만 들어간다. Apriori 행은 두 열을 비워 둔다.
 - `t_total_s`는 `t_profile_s + t_select_s + t_mining_s`에 서버 오버헤드(대기열 대기,
   프로세스 시작)를 더한 것이다. `t_select_s`에 `t_pilot_s`가 들어 있으니 따로 더하지 않는다.
 

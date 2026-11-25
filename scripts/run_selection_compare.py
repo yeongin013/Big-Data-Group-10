@@ -31,7 +31,8 @@ MIB = 1024 ** 2
 CONDITIONS = [("B0", "y1", 0.01, 64 * MIB), ("B1", "y1", 0.01, int(3.5 * MIB)),
               ("B0.25", "y1", 0.0025, 6 * MIB), ("B0.25-all", "all", 0.0025, 6 * MIB)]
 COLUMNS = ["condition", "dataset", "support", "memory_budget_bytes", "strategy", "repeat", "status", "selected", "source",
-           "pairs_ok", "best_ok", "t_profile_s", "t_pilot_s", "t_select_s", "t_mining_s", "t_total_s",
+           "pairs_ok", "best_ok", "t_profile_s", "t_pilot_s", "t_select_s", "t_mining_s",
+           "t_pcy_pass1_s", "t_pcy_pass2_s", "t_total_s",
            "mem_model_bytes", "mem_peak_bytes", "mem_mining_increase_bytes", "n_solar_calls", "n_pilots", "failures", "job_id"]
 
 
@@ -77,6 +78,7 @@ def run(repeats, strategies, conditions):
             for k, (s, _) in enumerate(runs, 1):
                 rows.append({**base, "strategy": f"fixed:{setting}", "repeat": k, "status": "completed", "selected": setting,
                              "source": "fixed", "pairs_ok": True, "t_mining_s": s["mining_seconds"],
+                             "t_pcy_pass1_s": s.get("pass1_seconds"), "t_pcy_pass2_s": s.get("pass2_seconds"),
                              "mem_model_bytes": mining.profile()["settings"][setting]["modeled_memory_bytes"],
                              "mem_peak_bytes": s["peak_rss_bytes"],
                              "mem_mining_increase_bytes": (s["peak_rss_bytes"] or 0) - (s["rss_before_mining_bytes"] or 0)})
@@ -101,6 +103,7 @@ def run(repeats, strategies, conditions):
                                t_profile_s=s["profile_seconds"], t_select_s=s["select_seconds"],
                                t_pilot_s=sum(e["result"]["elapsed_s"] for e in job["history"] if e["event"] == "pilot"),
                                t_mining_s=s["mining_seconds"], t_total_s=s["total_seconds"],
+                               t_pcy_pass1_s=s.get("pass1_seconds"), t_pcy_pass2_s=s.get("pass2_seconds"),
                                mem_model_bytes=s["modeled_memory_bytes"], mem_peak_bytes=s["peak_rss_bytes"],
                                mem_mining_increase_bytes=(s["peak_rss_bytes"] or 0) - (s["rss_before_mining_bytes"] or 0),
                                n_solar_calls=s["n_solar_calls"], n_pilots=s["n_pilots"])

@@ -10,6 +10,7 @@ for the full count. If that process fails and the strategy allows it, the worker
 Only aggregate profile and pilot numbers go to Solar (src.mining_selection).
 """
 import csv
+from contextlib import contextmanager
 import functools
 import json
 import os
@@ -45,15 +46,20 @@ def _now():
     return datetime.now(timezone.utc).isoformat(timespec="milliseconds")
 
 
+@contextmanager
 def _db():
     DB.parent.mkdir(parents=True, exist_ok=True)
     con = sqlite3.connect(DB, timeout=30)
     con.row_factory = sqlite3.Row
-    con.execute("""CREATE TABLE IF NOT EXISTS jobs (
-        id INTEGER PRIMARY KEY AUTOINCREMENT, status TEXT NOT NULL, dataset TEXT, support REAL,
-        memory_budget_bytes INTEGER, strategy TEXT, deadline TEXT, created_at TEXT, started_at TEXT,
-        finished_at TEXT, setting TEXT, message TEXT, history TEXT NOT NULL DEFAULT '[]', stats TEXT)""")
-    return con
+    try:
+        with con:
+            con.execute("""CREATE TABLE IF NOT EXISTS jobs (
+                id INTEGER PRIMARY KEY AUTOINCREMENT, status TEXT NOT NULL, dataset TEXT, support REAL,
+                memory_budget_bytes INTEGER, strategy TEXT, deadline TEXT, created_at TEXT, started_at TEXT,
+                finished_at TEXT, setting TEXT, message TEXT, history TEXT NOT NULL DEFAULT '[]', stats TEXT)""")
+            yield con
+    finally:
+        con.close()
 
 
 def _update(job_id, **fields):

@@ -427,7 +427,7 @@ function step(e, chosen) {
   switch (e.event) {
     case "profile": return li("", "입력 통계 계산", `장바구니 ${e.profile.n_baskets.toLocaleString()}개, 상품 ${e.profile.n_items.toLocaleString()}종에서 설정별 메모리를 추정했습니다.`, budgetChart(e.profile, chosen));
     case "pilot": return li("warn", "표본 시험 집계", `<span class="mono">${esc(e.result.setting)}</span>로 표본 ${e.result.sample_size.toLocaleString()}건을 ${secs(e.result.elapsed_s)} 만에 셌습니다. 표본의 빈발 쌍 ${e.result.n_frequent_pairs.toLocaleString()}개는 전체 결과가 아닙니다.`);
-    case "solar_choice": return li("warn", `Solar의 선택: <span class="mono">${esc(e.setting)}</span>`, "", `<blockquote>${esc(e.reason)}${(e.reason || "").length >= 500 ? "… (기록은 500자까지 저장합니다)" : ""}</blockquote>`);
+    case "solar_choice": return li("warn", `Solar의 선택: <span class="mono">${esc(e.setting)}</span>`, "Solar가 작성한 설명은 자동 검증되지 않았습니다. 수치는 위의 입력 통계와 예산에서 확인하세요.", `<blockquote>${esc(e.reason)}${(e.reason || "").length >= 500 ? "… (기록은 500자까지 저장합니다)" : ""}</blockquote>`);
     case "invalid_tool_call": return li("bad", "Solar의 잘못된 요청", esc(e.reason));
     case "fallback": return li("bad", "Solar 선택 실패, 규칙 기반으로 넘어감", esc(e.reason));
     case "mining_failed": return li("bad", `집계 실패: <span class="mono">${esc(e.setting)}</span>`, esc(e.reason));
@@ -456,7 +456,7 @@ async function showJob(job) {
       ${tile("집계 시간", secs(s.mining_seconds))}
       ${tile("전체 시간", secs(s.total_seconds) + "<br><small>접수부터 완료까지</small>")}
       ${tile("모델 메모리", mib(s.modeled_memory_bytes))}
-      ${tile("집계 중 늘어난 메모리", s.peak_rss_bytes == null ? "-" : mib(s.peak_rss_bytes - s.rss_before_mining_bytes) + "<br><small>프로세스 실측</small>")}
+      ${tile("집계 중 늘어난 메모리", s.peak_rss_bytes == null || s.rss_before_mining_bytes == null ? "측정 불가<br><small>이 환경에서 미지원</small>" : mib(s.peak_rss_bytes - s.rss_before_mining_bytes) + "<br><small>프로세스 실측</small>")}
     </dl>` : "";
   const steps = (job.history || []).map((e) => step(e, job.setting)).join("");
   box.innerHTML = head + message + tiles +
